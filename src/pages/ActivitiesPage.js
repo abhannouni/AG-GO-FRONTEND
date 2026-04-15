@@ -1,28 +1,32 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ActivityCard from '../components/ActivityCard';
+import FilterBar from '../components/FilterBar';
 import Spinner from '../components/Spinner';
 import { fetchActivities, selectActivities, selectActivitiesLoading, selectActivitiesError } from '../redux/activities/activitiesSlice';
 import { activityCategories } from '../data/mockData';
 
-const SearchIcon = () => (
-    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <circle cx="11" cy="11" r="8" />
-        <path strokeLinecap="round" d="M21 21l-4.35-4.35" />
-    </svg>
-);
-
 const MapLinkIcon = () => (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
     </svg>
 );
 
+const SORT_OPTIONS = [
+    { value: 'popular', label: 'Most Popular' },
+    { value: 'rating', label: 'Highest Rated' },
+    { value: 'price-asc', label: 'Price: Low → High' },
+    { value: 'price-desc', label: 'Price: High → Low' },
+];
+
+const DEFAULT_CATEGORY = 'All';
+const DEFAULT_SORT = 'popular';
+
 const ActivitiesPage = () => {
-    const [activeCategory, setActiveCategory] = useState('All');
+    const [activeCategory, setActiveCategory] = useState(DEFAULT_CATEGORY);
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState('popular');
+    const [sortBy, setSortBy] = useState(DEFAULT_SORT);
     const dispatch = useDispatch();
     const activities = useSelector(selectActivities);
     const loading = useSelector(selectActivitiesLoading);
@@ -32,10 +36,16 @@ const ActivitiesPage = () => {
         dispatch(fetchActivities());
     }, [dispatch]);
 
+    const handleReset = useCallback(() => {
+        setActiveCategory(DEFAULT_CATEGORY);
+        setSearchQuery('');
+        setSortBy(DEFAULT_SORT);
+    }, []);
+
     const filteredActivities = useMemo(() => {
         let acts = [...activities];
 
-        if (activeCategory !== 'All') {
+        if (activeCategory !== DEFAULT_CATEGORY) {
             acts = acts.filter((a) => a.category === activeCategory);
         }
         if (searchQuery.trim()) {
@@ -103,74 +113,37 @@ const ActivitiesPage = () => {
                 </div>
             </div>
 
-            {/* Controls Bar */}
-            <div className=" top-[76px] z-40 bg-white border-b border-gray-100 shadow-sm">
-                <div className="container mx-auto px-6 py-4">
-                    <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 justify-between">
-
-                        {/* Left: Search + Category chips */}
-                        <div className="flex flex-col sm:flex-row gap-3 flex-1 min-w-0">
-                            <div className="relative sm:w-64">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                                    <SearchIcon />
-                                </span>
-                                <input
-                                    type="text"
-                                    placeholder="Search activities..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2.5 rounded-full border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-900/20 focus:border-forest-700"
-                                />
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                                {activityCategories.map((cat) => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setActiveCategory(cat)}
-                                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${activeCategory === cat
-                                            ? 'bg-forest-900 text-white shadow-md shadow-forest-900/20'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                            }`}
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Right: Sort + Map link */}
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="text-xs font-medium text-gray-700 border border-gray-200 rounded-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-forest-900/20 bg-white"
-                            >
-                                <option value="popular">Most Popular</option>
-                                <option value="rating">Highest Rated</option>
-                                <option value="price-asc">Price: Low to High</option>
-                                <option value="price-desc">Price: High to Low</option>
-                            </select>
-
-                            <Link
-                                to="/activities/map"
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-forest-900 text-white hover:bg-forest-800 transition-colors"
-                            >
-                                <MapLinkIcon />
-                                Map View
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* Filter Bar */}
+            <FilterBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Search activities…"
+                categories={activityCategories}
+                activeCategory={activeCategory}
+                defaultCategory={DEFAULT_CATEGORY}
+                onCategoryChange={setActiveCategory}
+                sortOptions={SORT_OPTIONS}
+                sortBy={sortBy}
+                defaultSort={DEFAULT_SORT}
+                onSortChange={setSortBy}
+                onReset={handleReset}
+                actions={
+                    <Link
+                        to="/activities/map"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-forest-900 text-white hover:bg-forest-800 transition-colors whitespace-nowrap"
+                    >
+                        <MapLinkIcon />
+                        Map View
+                    </Link>
+                }
+            />
 
             {/* Content */}
             <div className="container mx-auto px-6 py-10">
                 {/* Results count */}
                 <p className="text-sm text-gray-500 mb-6">
-                    Showing <span className="font-bold text-forest-900">{filteredActivities.length}</span>{' '}
-                    {filteredActivities.length === 1 ? 'activity' : 'activities'}
-                    {activeCategory !== 'All' && ` in "${activeCategory}"`}
+                    <span className="font-semibold text-gray-800">{filteredActivities.length}</span>{' '}
+                    {filteredActivities.length === 1 ? 'activity' : 'activities'} found
                 </p>
 
                 {loading ? (
@@ -202,7 +175,7 @@ const ActivitiesPage = () => {
                         <p className="text-gray-600 font-semibold text-lg mb-2">No activities found</p>
                         <p className="text-gray-400 text-sm">Try adjusting your filters or search query.</p>
                         <button
-                            onClick={() => { setActiveCategory('All'); setSearchQuery(''); }}
+                            onClick={handleReset}
                             className="mt-4 px-6 py-2.5 rounded-full bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors"
                         >
                             Clear Filters

@@ -19,6 +19,14 @@
 }
 
 @layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .line-clamp-1 {
     overflow: hidden;
     display: -webkit-box;
