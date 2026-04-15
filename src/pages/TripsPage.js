@@ -98,7 +98,7 @@ const TripsPage = () => {
             </div>
 
             {/* Filters Bar */}
-            <div className="sticky top-[76px] z-40 bg-white border-b border-gray-100 shadow-sm">
+            <div className=" top-[76px] z-40 bg-white border-b border-gray-100 shadow-sm">
                 <div className="container mx-auto px-6 py-4">
                     <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
                         {/* Search */}
