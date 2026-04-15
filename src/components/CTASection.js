@@ -1,4 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated, selectUserRole } from '../redux/auth/authSlice';
 
 const PlusIcon = () => (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -25,7 +28,9 @@ const benefits = [
     'Get paid securely and on time',
 ];
 
-const CTASection = ({ userRole }) => {
+const CTASection = () => {
+    const isAuthenticated = useSelector(selectIsAuthenticated);
+    const role = useSelector(selectUserRole);
     return (
         <section className="py-20 bg-gradient-to-br from-forest-950 via-forest-900 to-forest-800 relative overflow-hidden">
             {/* Decorative background elements */}
@@ -62,14 +67,40 @@ const CTASection = ({ userRole }) => {
 
                         {/* CTA Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <button className="flex items-center justify-center gap-2 bg-gold-500 text-white px-7 py-4 rounded-full font-bold hover:bg-gold-400 transition-all duration-200 shadow-xl shadow-gold-500/30 hover:scale-105">
-                                <PlusIcon />
-                                Add an Activity
-                            </button>
-                            <button className="flex items-center justify-center gap-2 bg-white/10 border border-white/30 text-white px-7 py-4 rounded-full font-bold hover:bg-white/20 backdrop-blur-sm transition-all duration-200">
-                                <MapIcon />
-                                Create a Trip
-                            </button>
+                            {isAuthenticated && (role === 'prestataire' || role === 'admin') ? (
+                                <Link
+                                    to="/dashboard"
+                                    className="flex items-center justify-center gap-2 bg-gold-500 text-white px-7 py-4 rounded-full font-bold hover:bg-gold-400 transition-all duration-200 shadow-xl shadow-gold-500/30 hover:scale-105"
+                                >
+                                    <PlusIcon />
+                                    Go to Dashboard
+                                </Link>
+                            ) : isAuthenticated ? (
+                                <Link
+                                    to="/activities"
+                                    className="flex items-center justify-center gap-2 bg-gold-500 text-white px-7 py-4 rounded-full font-bold hover:bg-gold-400 transition-all duration-200 shadow-xl shadow-gold-500/30 hover:scale-105"
+                                >
+                                    <MapIcon />
+                                    Browse Activities
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link
+                                        to="/register"
+                                        className="flex items-center justify-center gap-2 bg-gold-500 text-white px-7 py-4 rounded-full font-bold hover:bg-gold-400 transition-all duration-200 shadow-xl shadow-gold-500/30 hover:scale-105"
+                                    >
+                                        <PlusIcon />
+                                        Get Started Free
+                                    </Link>
+                                    <Link
+                                        to="/activities/map"
+                                        className="flex items-center justify-center gap-2 bg-white/10 border border-white/30 text-white px-7 py-4 rounded-full font-bold hover:bg-white/20 backdrop-blur-sm transition-all duration-200"
+                                    >
+                                        <MapIcon />
+                                        Explore Map
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -99,9 +130,9 @@ const CTASection = ({ userRole }) => {
                         <p className="text-white font-semibold text-lg">Ready to grow your travel business?</p>
                         <p className="text-white/55 text-sm mt-1">Join thousands of local guides and tour operators already on AfGo</p>
                     </div>
-                    <button className="flex-shrink-0 bg-white text-forest-900 px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition-all">
+                    <Link to="/register" className="flex-shrink-0 bg-white text-forest-900 px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition-all">
                         Get Started Free →
-                    </button>
+                    </Link>
                 </div>
             </div>
         </section>

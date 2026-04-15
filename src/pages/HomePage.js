@@ -5,7 +5,7 @@ import TripsSection from '../components/TripsSection';
 import ActivitiesSection from '../components/ActivitiesSection';
 import CTASection from '../components/CTASection';
 
-const HomePage = ({ userRole }) => {
+const HomePage = () => {
     const handleSearch = () => {
         const section = document.getElementById('trips');
         if (section) section.scrollIntoView({ behavior: 'smooth' });
@@ -17,7 +17,7 @@ const HomePage = ({ userRole }) => {
             <StatsBar />
             <TripsSection />
             <ActivitiesSection />
-            <CTASection userRole={userRole} />
+            <CTASection />
         </div>
     );
 };
