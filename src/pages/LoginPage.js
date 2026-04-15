@@ -12,7 +12,8 @@ const GlobeIcon = () => (
 );
 
 const LoginPage = () => {
-    const [form, setForm] = useState({ email: '', password: '' });
+    // 'identifier' accepts both email address and username
+    const [form, setForm] = useState({ identifier: '', password: '' });
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
@@ -60,22 +61,16 @@ const LoginPage = () => {
                     <h1 className="text-2xl font-extrabold text-forest-950 mb-1">Welcome back</h1>
                     <p className="text-gray-500 text-sm mb-6">Sign in to your AfrikaGo account</p>
 
-                    {error && (
-                        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-                            {error}
-                        </div>
-                    )}
-
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email Address</label>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email or Username</label>
                             <input
-                                type="email"
-                                name="email"
-                                value={form.email}
+                                type="text"
+                                name="identifier"
+                                value={form.identifier}
                                 onChange={handleChange}
                                 required
-                                placeholder="you@example.com"
+                                placeholder="you@example.com or john_doe"
                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-900/20 focus:border-forest-700 transition-colors"
                             />
                         </div>

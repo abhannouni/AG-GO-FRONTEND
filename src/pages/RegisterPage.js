@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { register, selectAuth, clearAuthError } from '../redux/auth/authSlice';
+import { register, selectAuth, clearAuthError, clearRegisterSuccess } from '../redux/auth/authSlice';
 import Spinner from '../components/Spinner';
 
 const GlobeIcon = () => (
@@ -12,17 +12,19 @@ const GlobeIcon = () => (
 );
 
 const RegisterPage = () => {
-    const [form, setForm] = useState({ name: '', email: '', password: '', role: 'client' });
+    const [form, setForm] = useState({ username: '', email: '', password: '', role: 'client' });
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { loading, error, registerSuccess } = useSelector(selectAuth);
 
     useEffect(() => {
         dispatch(clearAuthError());
+        dispatch(clearRegisterSuccess());
     }, [dispatch]);
 
+    // Register returns a token — navigate home directly (user is auto-logged-in)
     useEffect(() => {
-        if (registerSuccess) navigate('/login');
+        if (registerSuccess) navigate('/', { replace: true });
     }, [registerSuccess, navigate]);
 
     const handleChange = (e) =>
@@ -57,22 +59,20 @@ const RegisterPage = () => {
                     <h1 className="text-2xl font-extrabold text-forest-950 mb-1">Create your account</h1>
                     <p className="text-gray-500 text-sm mb-6">Join AfrikaGo and start exploring</p>
 
-                    {error && (
-                        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-                            {error}
-                        </div>
-                    )}
-
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Full Name</label>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Username</label>
                             <input
                                 type="text"
-                                name="name"
-                                value={form.name}
+                                name="username"
+                                value={form.username}
                                 onChange={handleChange}
                                 required
-                                placeholder="Your full name"
+                                minLength={3}
+                                maxLength={30}
+                                pattern="[a-zA-Z0-9_]+"
+                                title="3–30 characters: letters, numbers, and underscores only"
+                                placeholder="e.g. john_doe"
                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-900/20 focus:border-forest-700 transition-colors"
                             />
                         </div>
@@ -98,8 +98,8 @@ const RegisterPage = () => {
                                 value={form.password}
                                 onChange={handleChange}
                                 required
-                                minLength={6}
-                                placeholder="At least 6 characters"
+                                minLength={8}
+                                placeholder="Min 8 chars, uppercase, lowercase, digit"
                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-900/20 focus:border-forest-700 transition-colors"
                             />
                         </div>
@@ -114,8 +114,8 @@ const RegisterPage = () => {
                                     <label
                                         key={value}
                                         className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all text-sm font-medium ${form.role === value
-                                                ? 'border-forest-700 bg-forest-50 text-forest-900'
-                                                : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                                            ? 'border-forest-700 bg-forest-50 text-forest-900'
+                                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
                                             }`}
                                     >
                                         <input

@@ -1,30 +1,42 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI } from '../../API/endpoints';
+import { showToast } from '../ui/uiSlice';
+import { classifyAuthError } from '../../utils/authErrors';
 
 // ── Async thunks ──────────────────────────────────────────────────────────────
 
 export const register = createAsyncThunk(
     'auth/register',
-    async (data, { rejectWithValue }) => {
+    async (data, { rejectWithValue, dispatch }) => {
         try {
             const res = await authAPI.register(data);
-            return res.data;
+            const { token, user } = res.data;
+            localStorage.setItem('afgo_token', token);
+            localStorage.setItem('afgo_user', JSON.stringify(user));
+            dispatch(showToast({ message: 'Account created! Welcome to AfrikaGo ❤️', type: 'success' }));
+            return { token, user };
         } catch (err) {
-            return rejectWithValue(err.message);
+            const { message, toastType } = classifyAuthError(err.status, err.message, 'register');
+            dispatch(showToast({ message, type: toastType }));
+            return rejectWithValue({ message, status: err.status });
         }
     }
 );
 
 export const login = createAsyncThunk(
     'auth/login',
-    async (data, { rejectWithValue }) => {
+    async (data, { rejectWithValue, dispatch }) => {
         try {
             const res = await authAPI.login(data);
             const { token, user } = res.data;
             localStorage.setItem('afgo_token', token);
+            localStorage.setItem('afgo_user', JSON.stringify(user));
+            dispatch(showToast({ message: `Welcome back, ${user.username || user.email}!`, type: 'success' }));
             return { token, user };
         } catch (err) {
-            return rejectWithValue(err.message);
+            const { message, toastType } = classifyAuthError(err.status, err.message, 'login');
+            dispatch(showToast({ message, type: toastType }));
+            return rejectWithValue({ message, status: err.status });
         }
     }
 );
@@ -71,13 +83,15 @@ const authSlice = createSlice({
                 state.error = null;
                 state.registerSuccess = false;
             })
-            .addCase(register.fulfilled, (state) => {
+            .addCase(register.fulfilled, (state, action) => {
                 state.loading = false;
                 state.registerSuccess = true;
+                state.token = action.payload.token;
+                state.user = action.payload.user;
             })
             .addCase(register.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload?.message ?? action.payload;
             });
 
         // login
@@ -94,7 +108,7 @@ const authSlice = createSlice({
             })
             .addCase(login.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload?.message ?? action.payload;
             });
     },
 });

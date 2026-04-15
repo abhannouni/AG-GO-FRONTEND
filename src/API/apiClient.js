@@ -15,16 +15,22 @@ apiClient.interceptors.request.use((config) => {
     return config;
 });
 
-// Normalise error shape so thunks always get { message }
+// Normalise error shape — attach status so callers can classify the error
 apiClient.interceptors.response.use(
     (res) => res,
     (error) => {
+        const status = error.response?.status;
         const message =
             error.response?.data?.message ||
             error.response?.data?.error ||
-            error.message ||
-            'An unexpected error occurred';
-        return Promise.reject(new Error(message));
+            (error.code === 'ECONNABORTED'
+                ? 'Request timed out. Please try again.'
+                : !error.response
+                    ? 'Unable to connect. Please check your connection.'
+                    : error.message || 'An unexpected error occurred');
+        const err = new Error(message);
+        err.status = status;        // carry HTTP status for toast classification
+        return Promise.reject(err);
     }
 );
 
