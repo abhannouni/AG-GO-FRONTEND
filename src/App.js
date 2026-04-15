@@ -1,26 +1,38 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import store from './redux/store';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import TripsPage from './pages/TripsPage';
 import ActivitiesPage from './pages/ActivitiesPage';
 import ActivitiesMapPage from './pages/ActivitiesMapPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/DashboardPage';
+import ToastNotification from './components/ToastNotification';
 
 function App() {
-  const [userRole, setUserRole] = useState('user'); // 'user' | 'prestataire'
-
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<Layout userRole={userRole} setUserRole={setUserRole} />}>
-          <Route path="/" element={<HomePage userRole={userRole} />} />
-          <Route path="/trips" element={<TripsPage />} />
-          <Route path="/activities" element={<ActivitiesPage />} />
-          <Route path="/activities/map" element={<ActivitiesMapPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <Provider store={store}>
+      <BrowserRouter>
+        <ToastNotification />
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/trips" element={<TripsPage />} />
+            <Route path="/activities" element={<ActivitiesPage />} />
+            <Route path="/activities/map" element={<ActivitiesMapPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
+          {/* Auth pages use a bare layout (no Navbar/Footer) */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Routes>
+      </BrowserRouter>
+    </Provider>
   );
 }
 
 export default App;
+
