@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import TripCard from '../components/TripCard';
 import FilterBar from '../components/FilterBar';
-import { mockTrips } from '../data/mockData';
+// Trips API not yet available — trips will be fetched from backend once endpoint is added
 
 const TRIP_CATEGORIES = ['All', 'City Tour', 'Adventure', 'Cultural', 'Beach'];
 
@@ -38,7 +38,7 @@ const TripsPage = () => {
     }, []);
 
     const filteredTrips = useMemo(() => {
-        let trips = [...mockTrips];
+        let trips = [];
 
         if (activeCategory !== DEFAULT_CATEGORY) {
             trips = trips.filter((t) => t.category === activeCategory);
@@ -96,9 +96,9 @@ const TripsPage = () => {
                     {/* Stats row */}
                     <div className="flex flex-wrap gap-6 mt-8">
                         {[
-                            { value: mockTrips.length, label: 'Trips Available' },
                             { value: '6+', label: 'Regions Covered' },
                             { value: '4.7★', label: 'Avg. Rating' },
+                            { value: '10+', label: 'Years Experience' },
                         ].map((s) => (
                             <div key={s.label} className="flex items-center gap-2">
                                 <span className="text-gold-400 font-extrabold text-xl">{s.value}</span>
@@ -149,19 +149,22 @@ const TripsPage = () => {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-24 text-center">
-                        <div className="w-16 h-16 bg-forest-50 rounded-full flex items-center justify-center mb-4">
-                            <svg className="w-8 h-8 text-forest-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        <div className="w-20 h-20 bg-forest-50 rounded-full flex items-center justify-center mb-6">
+                            <svg className="w-10 h-10 text-forest-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             </svg>
                         </div>
-                        <p className="text-gray-600 font-semibold text-lg mb-2">No trips found</p>
-                        <p className="text-gray-400 text-sm">Try adjusting your filters or search query.</p>
-                        <button
-                            onClick={handleReset}
-                            className="mt-4 px-6 py-2.5 rounded-full bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors"
+                        <p className="text-gray-700 font-bold text-xl mb-2">Trips Coming Soon</p>
+                        <p className="text-gray-400 text-sm max-w-sm">
+                            Our curated Morocco trips &amp; tours will be available here shortly.
+                            In the meantime, explore our activities below.
+                        </p>
+                        <a
+                            href="/activities"
+                            className="mt-6 px-6 py-2.5 rounded-full bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors"
                         >
-                            Clear Filters
-                        </button>
+                            Browse Activities
+                        </a>
                     </div>
                 )}
             </div>

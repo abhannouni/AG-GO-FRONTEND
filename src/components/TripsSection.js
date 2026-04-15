@@ -1,11 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import TripCard from './TripCard';
-import { mockTrips } from '../data/mockData';
 
 const TripsSection = () => {
-    const displayedTrips = mockTrips.slice(0, 4);
-
     return (
         <section id="trips" className="py-20 bg-gray-50">
             <div className="container mx-auto px-6">
@@ -27,15 +23,30 @@ const TripsSection = () => {
                     </p>
                 </div>
 
-                {/* Trip Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {displayedTrips.map((trip) => (
-                        <TripCard key={trip.id} trip={trip} />
-                    ))}
+                {/* Coming Soon State */}
+                <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border-2 border-dashed border-forest-100 bg-forest-50/30">
+                    <div className="w-16 h-16 bg-forest-100 rounded-full flex items-center justify-center mb-5">
+                        <svg className="w-8 h-8 text-forest-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                    </div>
+                    <p className="text-gray-700 font-bold text-lg mb-1">Trips &amp; Tours Coming Soon</p>
+                    <p className="text-gray-400 text-sm max-w-xs mb-6">
+                        Our curated Morocco trips will be published here shortly.
+                    </p>
+                    <Link
+                        to="/activities"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors"
+                    >
+                        Browse Activities Instead
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </Link>
                 </div>
 
                 {/* View All Button */}
-                <div className="text-center mt-12">
+                <div className="text-center mt-10">
                     <Link
                         to="/trips"
                         className="inline-flex items-center gap-2 px-8 py-4 rounded-full border-2 border-forest-900 text-forest-900 font-semibold hover:bg-forest-900 hover:text-white transition-all duration-200 group"

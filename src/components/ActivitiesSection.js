@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ToggleView from './ToggleView';
 import { fetchActivities, selectActivities, selectActivitiesLoading } from '../redux/activities/activitiesSlice';
-import { activityCategories } from '../data/mockData';
+import { activityCategories } from '../constants/uiConstants';
 
 const ActivitiesSection = () => {
     const [activeCategory, setActiveCategory] = useState('All');

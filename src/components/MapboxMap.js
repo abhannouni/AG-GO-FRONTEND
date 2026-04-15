@@ -24,30 +24,60 @@ const CATEGORY_LABELS = {
     Beach: 'B',
 };
 
+/** Resolve [lat, lng] from an activity, supporting multiple shapes.
+ *  Returns null if no valid coordinates are found. */
+const resolveCoords = (a) => {
+    // Shape 1 (legacy/mock): a.coordinates = [lat, lng]
+    if (Array.isArray(a.coordinates) && a.coordinates.length >= 2) {
+        const [lat, lng] = a.coordinates;
+        if (typeof lat === 'number' && typeof lng === 'number') return [lat, lng];
+    }
+    // Shape 2 (backend GeoJSON): a.location.coordinates = { lat, lng } or [lng, lat]
+    const locCoords = a.location?.coordinates;
+    if (locCoords) {
+        if (typeof locCoords.lat === 'number' && typeof locCoords.lng === 'number') {
+            return [locCoords.lat, locCoords.lng];
+        }
+        if (Array.isArray(locCoords) && locCoords.length >= 2) {
+            // GeoJSON order is [lng, lat]
+            const [lng, lat] = locCoords;
+            if (typeof lat === 'number' && typeof lng === 'number') return [lat, lng];
+        }
+    }
+    return null;
+};
+
 /** Convert activities array → GeoJSON FeatureCollection */
 const buildGeoJSON = (activities) => ({
     type: 'FeatureCollection',
-    features: activities.map((a) => {
-        const [lat, lng] = a.coordinates; // mockData stores [lat, lng]
-        return {
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [lng, lat] },
-            properties: {
-                id: a.id,
-                title: a.title,
-                category: a.category,
-                location: a.location,
-                price: a.price,
-                rating: a.rating,
-                reviews: a.reviews,
-                duration: a.duration,
-                image: a.image,
-                description: a.description,
-                color: CATEGORY_COLORS[a.category] || '#0a2e1c',
-                label: CATEGORY_LABELS[a.category] || '?',
-            },
-        };
-    }),
+    features: activities
+        .map((a) => {
+            const coords = resolveCoords(a);
+            if (!coords) return null;
+            const [lat, lng] = coords;
+            const locStr = a.location && typeof a.location === 'object'
+                ? a.location.address ?? a.location.city ?? ''
+                : a.location ?? '';
+            return {
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [lng, lat] },
+                properties: {
+                    id: a._id ?? a.id,
+                    title: a.title,
+                    category: a.category,
+                    location: locStr,
+                    price: a.price,
+                    rating: a.rating?.average ?? a.rating,
+                    reviews: a.rating?.count ?? a.reviews,
+                    duration: a.duration,
+                    image: a.images?.[0] ?? a.image,
+                    description: a.description,
+                    color: CATEGORY_COLORS[a.category] || '#0a2e1c',
+                    label: CATEGORY_LABELS[a.category] || '?',
+                },
+            };
+        })
+        .filter(Boolean),
 });
 
 const buildMiniPopupHTML = (props) => `

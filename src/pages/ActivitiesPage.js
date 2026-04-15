@@ -5,7 +5,7 @@ import ActivityCard from '../components/ActivityCard';
 import FilterBar from '../components/FilterBar';
 import Spinner from '../components/Spinner';
 import { fetchActivities, selectActivities, selectActivitiesLoading, selectActivitiesError } from '../redux/activities/activitiesSlice';
-import { activityCategories } from '../data/mockData';
+import { activityCategories } from '../constants/uiConstants';
 
 const MapLinkIcon = () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

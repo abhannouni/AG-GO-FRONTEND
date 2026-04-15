@@ -1,5 +1,5 @@
 import React from 'react';
-import { stats } from '../data/mockData';
+import { stats } from '../constants/uiConstants';
 
 const StatsBar = () => {
     return (

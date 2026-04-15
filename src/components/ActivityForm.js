@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Spinner from './Spinner';
-import { activityCategories } from '../data/mockData';
+import { activityCategories } from '../constants/uiConstants';
 
 const CATEGORIES = activityCategories.filter((c) => c !== 'All');
 

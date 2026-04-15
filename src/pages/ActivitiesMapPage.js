@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import MapboxMap from '../components/MapboxMap';
 import { fetchActivities, selectActivities, selectActivitiesLoading } from '../redux/activities/activitiesSlice';
-import { activityCategories } from '../data/mockData';
+import { activityCategories } from '../constants/uiConstants';
 
 const CATEGORY_COLORS = {
     Adventure: '#e5aa30',

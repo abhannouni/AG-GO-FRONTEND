@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { moroccanCities, activityCategories } from '../data/mockData';
+import { moroccanCities, activityCategories } from '../constants/uiConstants';
 
 const LocationIcon = () => (
     <svg className="w-5 h-5 text-forest-800 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -149,7 +149,7 @@ const Hero = ({ onSearch }) => {
                 </button>
             </div>
 
-            
+
         </section>
     );
 };
