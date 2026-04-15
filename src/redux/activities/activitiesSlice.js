@@ -71,6 +71,7 @@ const activitiesSlice = createSlice({
         items: [],
         selected: null,
         loading: false,
+        mutating: false,   // true while create / update / delete is in-flight
         error: null,
         // filters mirrored in Redux so components stay in sync
         filters: { city: '', category: '' },
@@ -119,30 +120,39 @@ const activitiesSlice = createSlice({
 
         // create
         builder
+            .addCase(createActivity.pending, (state) => { state.mutating = true; })
             .addCase(createActivity.fulfilled, (state, action) => {
+                state.mutating = false;
                 state.items.unshift(action.payload);
             })
             .addCase(createActivity.rejected, (state, action) => {
+                state.mutating = false;
                 state.error = action.payload;
             });
 
         // update
         builder
+            .addCase(updateActivity.pending, (state) => { state.mutating = true; })
             .addCase(updateActivity.fulfilled, (state, action) => {
+                state.mutating = false;
                 const idx = state.items.findIndex((a) => a._id === action.payload._id);
                 if (idx !== -1) state.items[idx] = action.payload;
                 if (state.selected?._id === action.payload._id) state.selected = action.payload;
             })
             .addCase(updateActivity.rejected, (state, action) => {
+                state.mutating = false;
                 state.error = action.payload;
             });
 
         // delete
         builder
+            .addCase(deleteActivity.pending, (state) => { state.mutating = true; })
             .addCase(deleteActivity.fulfilled, (state, action) => {
+                state.mutating = false;
                 state.items = state.items.filter((a) => a._id !== action.payload);
             })
             .addCase(deleteActivity.rejected, (state, action) => {
+                state.mutating = false;
                 state.error = action.payload;
             });
     },
@@ -154,6 +164,7 @@ export const { setFilters, clearSelectedActivity, clearActivitiesError } = activ
 export const selectActivities = (s) => s.activities.items;
 export const selectSelectedActivity = (s) => s.activities.selected;
 export const selectActivitiesLoading = (s) => s.activities.loading;
+export const selectActivitiesMutating = (s) => s.activities.mutating;
 export const selectActivitiesError = (s) => s.activities.error;
 export const selectActivityFilters = (s) => s.activities.filters;
 

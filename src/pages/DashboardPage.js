@@ -12,6 +12,8 @@ import {
 import { selectIsAuthenticated, selectUser, selectUserRole } from '../redux/auth/authSlice';
 import { showToast } from '../redux/ui/uiSlice';
 import Spinner from '../components/Spinner';
+import ActivityForm from '../components/ActivityForm';
+import ConfirmModal from '../components/ConfirmModal';
 
 const STATUS_BADGE = {
     pending: 'bg-yellow-100 text-yellow-800',
@@ -20,7 +22,13 @@ const STATUS_BADGE = {
     cancelled: 'bg-gray-100 text-gray-600',
 };
 
-const EMPTY_ACTIVITY = { title: '', description: '', category: 'Adventure', price: '', location: '', city: '' };
+const CATEGORY_COLORS = {
+    Adventure: 'bg-orange-100 text-orange-700',
+    Cultural: 'bg-amber-100 text-amber-700',
+    'Food & Culture': 'bg-red-50 text-red-700',
+    Wellness: 'bg-forest-100 text-forest-700',
+    Beach: 'bg-sky-100 text-sky-700',
+};
 
 const DashboardPage = () => {
     const dispatch = useDispatch();
@@ -41,7 +49,8 @@ const DashboardPage = () => {
     const [tab, setTab] = useState(role === 'client' ? 'bookings' : 'activities');
     const [showForm, setShowForm] = useState(false);
     const [editingActivity, setEditingActivity] = useState(null);
-    const [formData, setFormData] = useState(EMPTY_ACTIVITY);
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null, title: '' });
+    const [deletingId, setDeletingId] = useState(null);
     const [formLoading, setFormLoading] = useState(false);
 
     useEffect(() => {
@@ -57,41 +66,27 @@ const DashboardPage = () => {
         }
     }, [dispatch, isAuthenticated, role, navigate]);
 
-    const handleFormChange = (e) =>
-        setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
     const openCreate = () => {
         setEditingActivity(null);
-        setFormData(EMPTY_ACTIVITY);
         setShowForm(true);
     };
 
     const openEdit = (activity) => {
         setEditingActivity(activity);
-        setFormData({
-            title: activity.title || '',
-            description: activity.description || '',
-            category: activity.category || 'Adventure',
-            price: activity.price || '',
-            location: activity.location || '',
-            city: activity.city || '',
-        });
         setShowForm(true);
     };
 
-    const handleFormSubmit = async (e) => {
-        e.preventDefault();
+    const handleFormSubmit = async (payload) => {
         setFormLoading(true);
         try {
             if (editingActivity) {
-                await dispatch(updateActivity({ id: editingActivity._id || editingActivity.id, data: formData })).unwrap();
+                await dispatch(updateActivity({ id: editingActivity._id || editingActivity.id, data: payload })).unwrap();
                 dispatch(showToast({ message: 'Activity updated!', type: 'success' }));
             } else {
-                await dispatch(createActivity(formData)).unwrap();
+                await dispatch(createActivity(payload)).unwrap();
                 dispatch(showToast({ message: 'Activity created!', type: 'success' }));
             }
             setShowForm(false);
-            dispatch(fetchActivities());
         } catch (err) {
             dispatch(showToast({ message: err || 'Something went wrong', type: 'error' }));
         } finally {
@@ -99,14 +94,20 @@ const DashboardPage = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Delete this activity?')) return;
+    const handleDeleteRequest = (id, title) =>
+        setConfirmDelete({ open: true, id, title });
+
+    const handleDeleteConfirm = async () => {
+        const { id } = confirmDelete;
+        setDeletingId(id);
         try {
             await dispatch(deleteActivity(id)).unwrap();
             dispatch(showToast({ message: 'Activity deleted', type: 'success' }));
-            dispatch(fetchActivities());
+            setConfirmDelete({ open: false, id: null, title: '' });
         } catch (err) {
             dispatch(showToast({ message: err || 'Delete failed', type: 'error' }));
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -183,22 +184,103 @@ const DashboardPage = () => {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {activities.map((act) => (
-                                    <div key={act._id || act.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3">
-                                        <div>
-                                            <span className="text-xs font-semibold text-forest-700 bg-forest-50 px-2 py-0.5 rounded-full">{act.category}</span>
-                                            <h3 className="font-bold text-forest-950 mt-2 text-base">{act.title}</h3>
-                                            <p className="text-gray-500 text-xs mt-1 line-clamp-2">{act.description}</p>
-                                        </div>
-                                        <div className="flex items-center justify-between text-sm mt-auto pt-3 border-t border-gray-50">
-                                            <span className="font-bold text-forest-900">{act.price} MAD</span>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => openEdit(act)} className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors">Edit</button>
-                                                <button onClick={() => handleDelete(act._id || act.id)} className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors">Delete</button>
+                                {activities.map((act) => {
+                                    const thumb = act.images?.[0] || act.image;
+                                    const catCls = CATEGORY_COLORS[act.category] || 'bg-gray-100 text-gray-700';
+                                    const actId = act._id || act.id;
+                                    const isDeleting = deletingId === actId;
+                                    return (
+                                        <div
+                                            key={actId}
+                                            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow"
+                                        >
+                                            {/* Thumbnail */}
+                                            {thumb ? (
+                                                <div className="h-36 overflow-hidden bg-gray-100 flex-shrink-0">
+                                                    <img
+                                                        src={thumb}
+                                                        alt={act.title}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="h-36 bg-gradient-to-br from-forest-50 to-forest-100 flex items-center justify-center flex-shrink-0">
+                                                    <svg className="w-10 h-10 text-forest-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7l9 6 9-6" />
+                                                    </svg>
+                                                </div>
+                                            )}
+
+                                            <div className="p-5 flex flex-col gap-3 flex-1">
+                                                {/* Category + title */}
+                                                <div>
+                                                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${catCls}`}>
+                                                        {act.category}
+                                                    </span>
+                                                    <h3 className="font-bold text-forest-950 mt-2.5 text-base leading-snug line-clamp-1">
+                                                        {act.title}
+                                                    </h3>
+                                                    {act.description && (
+                                                        <p className="text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed">
+                                                            {act.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {/* Meta row */}
+                                                <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                                                    {act.city && (
+                                                        <span className="flex items-center gap-1">
+                                                            <svg className="w-3 h-3 text-forest-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            </svg>
+                                                            {act.city}
+                                                        </span>
+                                                    )}
+                                                    {act.duration != null && (
+                                                        <span className="flex items-center gap-1">
+                                                            <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <circle cx="12" cy="12" r="10" />
+                                                                <path strokeLinecap="round" d="M12 6v6l4 2" />
+                                                            </svg>
+                                                            {typeof act.duration === 'number' ? `${act.duration}h` : act.duration}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Footer row */}
+                                                <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-50">
+                                                    <span className="font-bold text-forest-900 text-sm">
+                                                        {act.price} MAD
+                                                    </span>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => openEdit(act)}
+                                                            className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteRequest(actId, act.title)}
+                                                            disabled={isDeleting}
+                                                            className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors disabled:opacity-60 flex items-center gap-1"
+                                                        >
+                                                            {isDeleting ? (
+                                                                <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                                </svg>
+                                                            ) : 'Delete'}
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -266,80 +348,25 @@ const DashboardPage = () => {
                 )}
             </div>
 
-            {/* ── Activity Form Modal ── */}
-            {showForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-7">
-                        <h2 className="text-xl font-bold text-forest-950 mb-5">
-                            {editingActivity ? 'Edit Activity' : 'New Activity'}
-                        </h2>
-                        <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
-                            {[
-                                { name: 'title', label: 'Title', type: 'text', placeholder: 'e.g. Desert Camel Trek' },
-                                { name: 'price', label: 'Price (MAD)', type: 'number', placeholder: '0' },
-                                { name: 'location', label: 'Location', type: 'text', placeholder: 'e.g. Merzouga Dunes' },
-                                { name: 'city', label: 'City', type: 'text', placeholder: 'e.g. Merzouga' },
-                            ].map(({ name, label, type, placeholder }) => (
-                                <div key={name}>
-                                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">{label}</label>
-                                    <input
-                                        type={type}
-                                        name={name}
-                                        value={formData[name]}
-                                        onChange={handleFormChange}
-                                        placeholder={placeholder}
-                                        required
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-900/20 focus:border-forest-700 transition-colors"
-                                    />
-                                </div>
-                            ))}
+            {/* ── Activity Form (slide-over) ── */}
+            <ActivityForm
+                isOpen={showForm}
+                activity={editingActivity}
+                loading={formLoading}
+                onClose={() => setShowForm(false)}
+                onSubmit={handleFormSubmit}
+            />
 
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Category</label>
-                                <select
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleFormChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-900/20 bg-white"
-                                >
-                                    {['Adventure', 'Cultural', 'Food & Culture', 'Wellness', 'Beach'].map((c) => (
-                                        <option key={c} value={c}>{c}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Description</label>
-                                <textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleFormChange}
-                                    placeholder="Describe the activity..."
-                                    rows={3}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-900/20 focus:border-forest-700 transition-colors resize-none"
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForm(false)}
-                                    className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={formLoading}
-                                    className="flex-1 py-3 rounded-xl bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-                                >
-                                    {formLoading ? <Spinner size="sm" /> : editingActivity ? 'Save Changes' : 'Create'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* ── Delete Confirmation ── */}
+            <ConfirmModal
+                isOpen={confirmDelete.open}
+                title="Delete Activity"
+                message={`"${confirmDelete.title}" will be permanently deleted and removed from all listings. This cannot be undone.`}
+                confirmLabel="Delete"
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setConfirmDelete({ open: false, id: null, title: '' })}
+                loading={!!deletingId}
+            />
         </div>
     );
 };
