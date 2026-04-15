@@ -49,10 +49,16 @@ const TripsPage = () => {
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             trips = trips.filter(
-                (t) =>
-                    t.title.toLowerCase().includes(q) ||
-                    t.location.toLowerCase().includes(q) ||
-                    t.description.toLowerCase().includes(q)
+                (t) => {
+                    const loc = t.location && typeof t.location === 'object'
+                        ? t.location.address ?? ''
+                        : t.location ?? '';
+                    return (
+                        t.title.toLowerCase().includes(q) ||
+                        loc.toLowerCase().includes(q) ||
+                        t.description.toLowerCase().includes(q)
+                    );
+                }
             );
         }
 

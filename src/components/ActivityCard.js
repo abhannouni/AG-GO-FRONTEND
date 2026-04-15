@@ -32,8 +32,12 @@ const ratingValue = (r) => (r && typeof r === 'object' ? r.average : r) ?? 0;
 const reviewCount = (activity) =>
     activity.reviews ?? activity.rating?.count ?? 0;
 
+const locStr = (loc) =>
+    loc && typeof loc === 'object' ? loc.address ?? loc.city ?? '' : loc ?? '';
+
 const ActivityCard = ({ activity }) => {
-    const { title, category, location, duration, price, rating, image, description } = activity;
+    const { title, category, duration, price, rating, image, description } = activity;
+    const location = locStr(activity.location);
     const colors = categoryColors[category] || { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-500' };
     const displayRating = ratingValue(rating);
     const displayReviews = reviewCount(activity);

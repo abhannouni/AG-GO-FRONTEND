@@ -58,10 +58,16 @@ const ActivitiesMapPage = () => {
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             acts = acts.filter(
-                (a) =>
-                    a.title.toLowerCase().includes(q) ||
-                    a.location.toLowerCase().includes(q) ||
-                    a.description.toLowerCase().includes(q)
+                (a) => {
+                    const loc = a.location && typeof a.location === 'object'
+                        ? a.location.address ?? ''
+                        : a.location ?? '';
+                    return (
+                        a.title.toLowerCase().includes(q) ||
+                        loc.toLowerCase().includes(q) ||
+                        a.description.toLowerCase().includes(q)
+                    );
+                }
             );
         }
         return acts;
@@ -241,7 +247,9 @@ const ActivitiesMapPage = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                {selectedActivity.location}
+                                {selectedActivity.location && typeof selectedActivity.location === 'object'
+                                    ? selectedActivity.location.address ?? ''
+                                    : selectedActivity.location ?? ''}
                             </div>
 
                             {/* 3-col stat cards */}

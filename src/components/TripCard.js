@@ -32,7 +32,10 @@ const categoryColors = {
 const ratingValue = (r) => (r && typeof r === 'object' ? r.average : r) ?? 0;
 
 const TripCard = ({ trip }) => {
-    const { title, location, duration, price, rating, image, category } = trip;
+    const { title, duration, price, rating, image, category } = trip;
+    const location = trip.location && typeof trip.location === 'object'
+        ? trip.location.address ?? trip.location.city ?? ''
+        : trip.location ?? '';
     const displayRating = ratingValue(rating);
     const displayReviews = trip.reviews ?? trip.rating?.count ?? 0;
 

@@ -51,10 +51,16 @@ const ActivitiesPage = () => {
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             acts = acts.filter(
-                (a) =>
-                    a.title.toLowerCase().includes(q) ||
-                    a.location.toLowerCase().includes(q) ||
-                    a.description.toLowerCase().includes(q)
+                (a) => {
+                    const loc = a.location && typeof a.location === 'object'
+                        ? a.location.address ?? ''
+                        : a.location ?? '';
+                    return (
+                        a.title.toLowerCase().includes(q) ||
+                        loc.toLowerCase().includes(q) ||
+                        a.description.toLowerCase().includes(q)
+                    );
+                }
             );
         }
 
