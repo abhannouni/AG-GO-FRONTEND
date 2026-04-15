@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectIsAuthenticated, selectUser, selectUserRole, logout } from '../redux/auth/authSlice';
 
 const navLinks = [
     { label: 'Home', to: '/' },
@@ -29,10 +31,20 @@ const MenuIcon = () => (
     </svg>
 );
 
-const Navbar = ({ userRole, setUserRole }) => {
+const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const isAuthenticated = useSelector(selectIsAuthenticated);
+    const user = useSelector(selectUser);
+    const userRole = useSelector(selectUserRole);
+
+    const handleLogout = () => {
+        dispatch(logout());
+        navigate('/');
+    };
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -46,8 +58,8 @@ const Navbar = ({ userRole, setUserRole }) => {
     return (
         <nav
             className={`fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl z-50 transition-all duration-300 ${scrolled
-                    ? 'bg-white shadow-xl rounded-full'
-                    : 'bg-white/95 backdrop-blur-md rounded-full shadow-lg'
+                ? 'bg-white shadow-xl rounded-full'
+                : 'bg-white/95 backdrop-blur-md rounded-full shadow-lg'
                 }`}
         >
             <div className="flex items-center justify-between px-6 py-3">
@@ -71,8 +83,8 @@ const Navbar = ({ userRole, setUserRole }) => {
                                 <Link
                                     to={to}
                                     className={`font-medium text-sm transition-colors ${isActive(to)
-                                            ? 'text-forest-900 font-bold border-b-2 border-gold-500 pb-0.5'
-                                            : 'text-gray-600 hover:text-forest-800'
+                                        ? 'text-forest-900 font-bold border-b-2 border-gold-500 pb-0.5'
+                                        : 'text-gray-600 hover:text-forest-800'
                                         }`}
                                 >
                                     {label}
@@ -83,35 +95,45 @@ const Navbar = ({ userRole, setUserRole }) => {
                 </ul>
 
                 <div className="flex items-center gap-3">
-                    <div className="hidden md:flex items-center gap-0.5 bg-gray-100 rounded-full p-1">
-                        <button
-                            onClick={() => setUserRole('user')}
-                            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${userRole === 'user' ? 'bg-forest-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'
-                                }`}
-                        >
-                            User
-                        </button>
-                        <button
-                            onClick={() => setUserRole('prestataire')}
-                            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${userRole === 'prestataire' ? 'bg-gold-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'
-                                }`}
-                        >
-                            Prestataire
-                        </button>
-                    </div>
-
                     <button className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-forest-900 transition-all">
                         <SearchIcon />
                     </button>
 
-                    {userRole === 'prestataire' ? (
-                        <button className="hidden md:block bg-gold-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gold-400 transition-colors shadow-md shadow-gold-500/20">
-                            Dashboard &rarr;
-                        </button>
+                    {isAuthenticated ? (
+                        <div className="hidden md:flex items-center gap-2">
+                            {userRole === 'prestataire' || userRole === 'admin' ? (
+                                <Link
+                                    to="/dashboard"
+                                    className="bg-gold-500 text-forest-950 px-4 py-2 rounded-full text-sm font-semibold hover:bg-gold-400 transition-colors shadow-md shadow-gold-500/20"
+                                >
+                                    Dashboard
+                                </Link>
+                            ) : null}
+                            <span className="text-sm text-gray-600 font-medium max-w-[120px] truncate">
+                                {user?.name || user?.email}
+                            </span>
+                            <button
+                                onClick={handleLogout}
+                                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-gray-200 transition-colors"
+                            >
+                                Logout
+                            </button>
+                        </div>
                     ) : (
-                        <button className="hidden md:block bg-forest-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-forest-800 transition-colors shadow-md shadow-forest-900/20">
-                            Sign In &rarr;
-                        </button>
+                        <div className="hidden md:flex items-center gap-2">
+                            <Link
+                                to="/login"
+                                className="text-forest-900 text-sm font-semibold hover:text-forest-700 transition-colors px-3 py-2"
+                            >
+                                Sign In
+                            </Link>
+                            <Link
+                                to="/register"
+                                className="bg-forest-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-forest-800 transition-colors shadow-md shadow-forest-900/20"
+                            >
+                                Register &rarr;
+                            </Link>
+                        </div>
                     )}
 
                     <button
@@ -135,8 +157,8 @@ const Navbar = ({ userRole, setUserRole }) => {
                                         to={to}
                                         onClick={() => setMobileOpen(false)}
                                         className={`block font-medium py-2 px-2 rounded-xl text-sm transition-colors ${isActive(to)
-                                                ? 'text-forest-900 bg-forest-50 font-bold'
-                                                : 'text-gray-700 hover:text-forest-900 hover:bg-gray-50'
+                                            ? 'text-forest-900 bg-forest-50 font-bold'
+                                            : 'text-gray-700 hover:text-forest-900 hover:bg-gray-50'
                                             }`}
                                     >
                                         {label}
@@ -146,20 +168,42 @@ const Navbar = ({ userRole, setUserRole }) => {
                         ))}
                     </ul>
                     <div className="flex gap-2 pt-3 border-t border-gray-100">
-                        <button
-                            onClick={() => { setUserRole('user'); setMobileOpen(false); }}
-                            className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all ${userRole === 'user' ? 'bg-forest-900 text-white' : 'bg-gray-100 text-gray-600'
-                                }`}
-                        >
-                            User
-                        </button>
-                        <button
-                            onClick={() => { setUserRole('prestataire'); setMobileOpen(false); }}
-                            className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all ${userRole === 'prestataire' ? 'bg-gold-500 text-white' : 'bg-gray-100 text-gray-600'
-                                }`}
-                        >
-                            Prestataire
-                        </button>
+                        {isAuthenticated ? (
+                            <>
+                                {(userRole === 'prestataire' || userRole === 'admin') && (
+                                    <Link
+                                        to="/dashboard"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex-1 py-2 rounded-full text-sm font-semibold text-center bg-gold-500 text-forest-950"
+                                    >
+                                        Dashboard
+                                    </Link>
+                                )}
+                                <button
+                                    onClick={() => { handleLogout(); setMobileOpen(false); }}
+                                    className="flex-1 py-2 rounded-full text-sm font-semibold bg-gray-100 text-gray-700"
+                                >
+                                    Logout
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/login"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="flex-1 py-2 rounded-full text-sm font-semibold text-center bg-forest-900 text-white"
+                                >
+                                    Sign In
+                                </Link>
+                                <Link
+                                    to="/register"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="flex-1 py-2 rounded-full text-sm font-semibold text-center bg-gold-500 text-forest-950"
+                                >
+                                    Register
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

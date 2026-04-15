@@ -3,9 +3,9 @@ import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
-const Layout = ({ userRole, setUserRole }) => (
+const Layout = () => (
     <>
-        <Navbar userRole={userRole} setUserRole={setUserRole} />
+        <Navbar />
         <Outlet />
         <Footer />
     </>
