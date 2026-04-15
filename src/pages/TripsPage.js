@@ -53,7 +53,11 @@ const TripsPage = () => {
         switch (sortBy) {
             case 'price-asc': return trips.sort((a, b) => a.price - b.price);
             case 'price-desc': return trips.sort((a, b) => b.price - a.price);
-            case 'rating': return trips.sort((a, b) => b.rating - a.rating);
+            case 'rating': return trips.sort((a, b) => {
+                const ra = a.rating && typeof a.rating === 'object' ? a.rating.average : a.rating ?? 0;
+                const rb = b.rating && typeof b.rating === 'object' ? b.rating.average : b.rating ?? 0;
+                return rb - ra;
+            });
             default: return trips.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
         }
     }, [activeCategory, activeRegion, searchQuery, sortBy]);
@@ -118,8 +122,8 @@ const TripsPage = () => {
                                     key={cat}
                                     onClick={() => setActiveCategory(cat)}
                                     className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${activeCategory === cat
-                                            ? 'bg-forest-900 text-white shadow-md shadow-forest-900/20'
-                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        ? 'bg-forest-900 text-white shadow-md shadow-forest-900/20'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                         }`}
                                 >
                                     {cat}

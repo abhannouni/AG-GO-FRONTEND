@@ -29,8 +29,12 @@ const categoryColors = {
     'Food & Culture': 'bg-red-100 text-red-700',
 };
 
+const ratingValue = (r) => (r && typeof r === 'object' ? r.average : r) ?? 0;
+
 const TripCard = ({ trip }) => {
-    const { title, location, duration, price, rating, reviews, image, category } = trip;
+    const { title, location, duration, price, rating, image, category } = trip;
+    const displayRating = ratingValue(rating);
+    const displayReviews = trip.reviews ?? trip.rating?.count ?? 0;
 
     return (
         <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col">
@@ -67,8 +71,8 @@ const TripCard = ({ trip }) => {
                     {/* Rating */}
                     <div className="flex items-center gap-1">
                         <StarIcon />
-                        <span className="text-sm font-bold text-gray-800">{rating}</span>
-                        <span className="text-xs text-gray-400">({reviews})</span>
+                        <span className="text-sm font-bold text-gray-800">{displayRating ? displayRating.toFixed(1) : '—'}</span>
+                        <span className="text-xs text-gray-400">({displayReviews})</span>
                     </div>
 
                     {/* Duration */}

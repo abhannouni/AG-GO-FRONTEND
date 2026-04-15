@@ -28,9 +28,15 @@ const categoryColors = {
     'Beach': { bg: 'bg-sky-100', text: 'text-sky-700', dot: 'bg-sky-500' },
 };
 
+const ratingValue = (r) => (r && typeof r === 'object' ? r.average : r) ?? 0;
+const reviewCount = (activity) =>
+    activity.reviews ?? activity.rating?.count ?? 0;
+
 const ActivityCard = ({ activity }) => {
-    const { title, category, location, duration, price, rating, reviews, image, description } = activity;
+    const { title, category, location, duration, price, rating, image, description } = activity;
     const colors = categoryColors[category] || { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-500' };
+    const displayRating = ratingValue(rating);
+    const displayReviews = reviewCount(activity);
 
     return (
         <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col">
@@ -70,8 +76,8 @@ const ActivityCard = ({ activity }) => {
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-1">
                         <StarIcon />
-                        <span className="text-sm font-bold text-gray-800">{rating}</span>
-                        <span className="text-xs text-gray-400">({reviews} reviews)</span>
+                        <span className="text-sm font-bold text-gray-800">{displayRating ? displayRating.toFixed(1) : '—'}</span>
+                        <span className="text-xs text-gray-400">({displayReviews} reviews)</span>
                     </div>
                     <button className="text-xs font-semibold text-forest-800 hover:text-forest-600 flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
                         View Details
