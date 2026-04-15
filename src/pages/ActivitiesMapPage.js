@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import MapboxMap from '../components/MapboxMap';
-import { mockActivities, activityCategories } from '../data/mockData';
+import { fetchActivities, selectActivities, selectActivitiesLoading } from '../redux/activities/activitiesSlice';
+import { activityCategories } from '../data/mockData';
 
 const CATEGORY_COLORS = {
     Adventure: '#e5aa30',
@@ -42,9 +44,16 @@ const ActivitiesMapPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [panelVisible, setPanelVisible] = useState(false);
     const [filtersExpanded, setFiltersExpanded] = useState(true);
+    const dispatch = useDispatch();
+    const activities = useSelector(selectActivities);
+    const loading = useSelector(selectActivitiesLoading);
+
+    useEffect(() => {
+        dispatch(fetchActivities());
+    }, [dispatch]);
 
     const filteredActivities = useMemo(() => {
-        let acts = [...mockActivities];
+        let acts = [...activities];
         if (activeCategory !== 'All') acts = acts.filter((a) => a.category === activeCategory);
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
@@ -56,7 +65,7 @@ const ActivitiesMapPage = () => {
             );
         }
         return acts;
-    }, [activeCategory, searchQuery]);
+    }, [activeCategory, searchQuery, activities]);
 
     const handleSelect = (activity) => {
         setSelectedActivity(activity);
@@ -72,10 +81,23 @@ const ActivitiesMapPage = () => {
         // Fill viewport below navbar (navbar is ~76px from Layout)
         <div className="relative overflow-hidden" style={{ height: 'calc(100vh - 76px)' }}>
 
+            {/* Loading overlay */}
+            {loading && (
+                <div className="absolute inset-0 z-[60] flex items-center justify-center bg-white/70 backdrop-blur-sm">
+                    <div className="flex items-center gap-3 bg-white rounded-xl shadow-lg px-5 py-3">
+                        <svg className="animate-spin w-5 h-5 text-forest-700" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        <span className="text-sm font-semibold text-forest-800">Loading activities…</span>
+                    </div>
+                </div>
+            )}
+
             {/* ── Map — always full size ── */}
             <MapboxMap
                 activities={filteredActivities}
-                selectedId={selectedActivity?.id ?? null}
+                selectedId={selectedActivity?._id ?? selectedActivity?.id ?? null}
                 onSelect={handleSelect}
                 height="100%"
                 rounded={false}
@@ -227,7 +249,11 @@ const ActivitiesMapPage = () => {
                                 <div className="bg-forest-50 rounded-xl p-3 text-center">
                                     <div className="flex items-center justify-center gap-0.5 mb-0.5">
                                         <StarIcon />
-                                        <span className="text-gold-500 font-extrabold text-base">{selectedActivity.rating}</span>
+                                        <span className="text-gold-500 font-extrabold text-base">
+                                            {selectedActivity.rating && typeof selectedActivity.rating === 'object'
+                                                ? selectedActivity.rating.average?.toFixed(1)
+                                                : selectedActivity.rating}
+                                        </span>
                                     </div>
                                     <p className="text-gray-400 text-[10px] leading-tight">{selectedActivity.reviews} reviews</p>
                                 </div>

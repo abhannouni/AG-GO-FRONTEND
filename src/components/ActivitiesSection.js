@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import ToggleView from './ToggleView';
-import { mockActivities, activityCategories } from '../data/mockData';
+import { fetchActivities, selectActivities, selectActivitiesLoading } from '../redux/activities/activitiesSlice';
+import { activityCategories } from '../data/mockData';
 
 const ActivitiesSection = () => {
     const [activeCategory, setActiveCategory] = useState('All');
+    const dispatch = useDispatch();
+    const activities = useSelector(selectActivities);
+    const loading = useSelector(selectActivitiesLoading);
+
+    useEffect(() => {
+        dispatch(fetchActivities());
+    }, [dispatch]);
 
     const filteredActivities =
         activeCategory === 'All'
-            ? mockActivities
-            : mockActivities.filter((a) => a.category === activeCategory);
+            ? activities
+            : activities.filter((a) => a.category === activeCategory);
 
     return (
         <section id="activities" className="py-20 bg-white">
@@ -41,8 +50,8 @@ const ActivitiesSection = () => {
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
                                 className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeCategory === cat
-                                        ? 'bg-forest-900 text-white shadow-md shadow-forest-900/20'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-forest-900 text-white shadow-md shadow-forest-900/20'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 {cat}
@@ -52,7 +61,7 @@ const ActivitiesSection = () => {
 
                     {/* Results count */}
                     <span className="text-sm text-gray-400 flex-shrink-0">
-                        {filteredActivities.length} activities found
+                        {loading ? '…' : `${filteredActivities.length} activities found`}
                     </span>
                 </div>
 

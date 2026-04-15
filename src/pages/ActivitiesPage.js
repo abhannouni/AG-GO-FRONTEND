@@ -1,7 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import ActivityCard from '../components/ActivityCard';
-import { mockActivities, activityCategories } from '../data/mockData';
+import Spinner from '../components/Spinner';
+import { fetchActivities, selectActivities, selectActivitiesLoading, selectActivitiesError } from '../redux/activities/activitiesSlice';
+import { activityCategories } from '../data/mockData';
 
 const SearchIcon = () => (
     <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -20,9 +23,17 @@ const ActivitiesPage = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('popular');
+    const dispatch = useDispatch();
+    const activities = useSelector(selectActivities);
+    const loading = useSelector(selectActivitiesLoading);
+    const error = useSelector(selectActivitiesError);
+
+    useEffect(() => {
+        dispatch(fetchActivities());
+    }, [dispatch]);
 
     const filteredActivities = useMemo(() => {
-        let acts = [...mockActivities];
+        let acts = [...activities];
 
         if (activeCategory !== 'All') {
             acts = acts.filter((a) => a.category === activeCategory);
@@ -40,10 +51,14 @@ const ActivitiesPage = () => {
         switch (sortBy) {
             case 'price-asc': return acts.sort((a, b) => a.price - b.price);
             case 'price-desc': return acts.sort((a, b) => b.price - a.price);
-            case 'rating': return acts.sort((a, b) => b.rating - a.rating);
-            default: return acts.sort((a, b) => b.reviews - a.reviews);
+            case 'rating': return acts.sort((a, b) => {
+                const ra = a.rating && typeof a.rating === 'object' ? a.rating.average : a.rating ?? 0;
+                const rb = b.rating && typeof b.rating === 'object' ? b.rating.average : b.rating ?? 0;
+                return rb - ra;
+            });
+            default: return acts.sort((a, b) => (b.reviews ?? b.rating?.count ?? 0) - (a.reviews ?? a.rating?.count ?? 0));
         }
-    }, [activeCategory, searchQuery, sortBy]);
+    }, [activeCategory, searchQuery, sortBy, activities]);
 
     return (
         <div className="min-h-screen bg-white">
@@ -68,7 +83,7 @@ const ActivitiesPage = () => {
                     {/* Stats + Map link */}
                     <div className="flex flex-wrap items-center gap-6 mt-8">
                         {[
-                            { value: mockActivities.length, label: 'Activities' },
+                            { value: loading ? '…' : activities.length, label: 'Activities' },
                             { value: '5', label: 'Categories' },
                             { value: '4.7★', label: 'Avg. Rating' },
                         ].map((s) => (
@@ -158,10 +173,23 @@ const ActivitiesPage = () => {
                     {activeCategory !== 'All' && ` in "${activeCategory}"`}
                 </p>
 
-                {filteredActivities.length > 0 ? (
+                {loading ? (
+                    <Spinner className="py-24" size="lg" />
+                ) : error ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                        <p className="text-gray-600 font-semibold text-lg mb-2">Failed to load activities</p>
+                        <p className="text-gray-400 text-sm mb-4">{error}</p>
+                        <button
+                            onClick={() => dispatch(fetchActivities())}
+                            className="px-6 py-2.5 rounded-full bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                ) : filteredActivities.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                         {filteredActivities.map((activity) => (
-                            <ActivityCard key={activity.id} activity={activity} />
+                            <ActivityCard key={activity._id || activity.id} activity={activity} />
                         ))}
                     </div>
                 ) : (
