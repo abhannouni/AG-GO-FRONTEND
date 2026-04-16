@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -9,6 +9,7 @@ import {
 } from '../redux/activities/activitiesSlice';
 import Spinner from '../components/Spinner';
 import MapboxMap from '../components/MapboxMap';
+import BookingModal from '../components/BookingModal';
 
 const BackIcon = () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -52,6 +53,7 @@ const ActivityDetailPage = () => {
     const dispatch = useDispatch();
     const activity = useSelector(selectSelectedActivity);
     const loading = useSelector(selectActivitiesLoading);
+    const [bookingOpen, setBookingOpen] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -87,219 +89,229 @@ const ActivityDetailPage = () => {
     const categoryColor = CATEGORY_COLORS[activity.category] || '#0a2e1c';
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header with back button */}
-            <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-                <div className="container mx-auto px-6 py-4">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-forest-900 transition-colors"
-                    >
-                        <BackIcon />
-                        Back
-                    </button>
+        <>
+            <div className="min-h-screen bg-gray-50">
+                {/* Header with back button */}
+                <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+                    <div className="container mx-auto px-6 py-4">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-forest-900 transition-colors"
+                        >
+                            <BackIcon />
+                            Back
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            {/* Main content */}
-            <div className="container mx-auto px-6 py-8 max-w-6xl">
-                <div className="grid lg:grid-cols-3 gap-8">
-                    {/* Left column - Images & Details */}
-                    <div className="lg:col-span-2 space-y-6">
-                        {/* Hero image */}
-                        <div className="relative rounded-2xl overflow-hidden shadow-lg">
-                            <img
-                                src={imageUrl}
-                                alt={activity.title}
-                                className="w-full h-96 object-cover"
-                                onError={(e) => {
-                                    if (e.target.src !== FALLBACK_IMAGE) {
-                                        e.target.src = FALLBACK_IMAGE;
-                                    }
-                                }}
-                            />
-                            {/* Category badge */}
-                            <div className="absolute top-4 left-4">
-                                <span
-                                    className="px-4 py-2 rounded-full text-white text-sm font-bold shadow-lg"
-                                    style={{ background: categoryColor }}
-                                >
-                                    {activity.category}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Additional images */}
-                        {activity.images && activity.images.length > 1 && (
-                            <div className="grid grid-cols-3 gap-4">
-                                {activity.images.slice(1, 4).map((img, idx) => (
-                                    <div key={idx} className="rounded-xl overflow-hidden shadow">
-                                        <img
-                                            src={img}
-                                            alt={`${activity.title} ${idx + 2}`}
-                                            className="w-full h-32 object-cover"
-                                            onError={(e) => {
-                                                if (e.target.src !== FALLBACK_IMAGE) {
-                                                    e.target.src = FALLBACK_IMAGE;
-                                                }
-                                            }}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Title & Location */}
-                        <div className="bg-white rounded-2xl shadow p-6">
-                            <h1 className="text-3xl font-extrabold text-gray-900 mb-3">
-                                {activity.title}
-                            </h1>
-                            <div className="flex items-center gap-2 text-gray-600 mb-4">
-                                <svg
-                                    className="w-5 h-5 text-forest-600"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                    />
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                <span className="font-medium">{getLocationString(activity.location)}</span>
-                            </div>
-
-                            {/* Stats row */}
-                            <div className="flex items-center gap-6 pb-5 border-b border-gray-100">
-                                <div className="flex items-center gap-1.5">
-                                    <StarIcon />
-                                    <span className="font-bold text-gray-900">
-                                        {rating > 0 ? rating.toFixed(1) : '—'}
+                {/* Main content */}
+                <div className="container mx-auto px-6 py-8 max-w-6xl">
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        {/* Left column - Images & Details */}
+                        <div className="lg:col-span-2 space-y-6">
+                            {/* Hero image */}
+                            <div className="relative rounded-2xl overflow-hidden shadow-lg">
+                                <img
+                                    src={imageUrl}
+                                    alt={activity.title}
+                                    className="w-full h-96 object-cover"
+                                    onError={(e) => {
+                                        if (e.target.src !== FALLBACK_IMAGE) {
+                                            e.target.src = FALLBACK_IMAGE;
+                                        }
+                                    }}
+                                />
+                                {/* Category badge */}
+                                <div className="absolute top-4 left-4">
+                                    <span
+                                        className="px-4 py-2 rounded-full text-white text-sm font-bold shadow-lg"
+                                        style={{ background: categoryColor }}
+                                    >
+                                        {activity.category}
                                     </span>
-                                    <span className="text-sm text-gray-500">({reviews} reviews)</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-gray-600">
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <path strokeLinecap="round" d="M12 6v6l4 2" />
+                            </div>
+
+                            {/* Additional images */}
+                            {activity.images && activity.images.length > 1 && (
+                                <div className="grid grid-cols-3 gap-4">
+                                    {activity.images.slice(1, 4).map((img, idx) => (
+                                        <div key={idx} className="rounded-xl overflow-hidden shadow">
+                                            <img
+                                                src={img}
+                                                alt={`${activity.title} ${idx + 2}`}
+                                                className="w-full h-32 object-cover"
+                                                onError={(e) => {
+                                                    if (e.target.src !== FALLBACK_IMAGE) {
+                                                        e.target.src = FALLBACK_IMAGE;
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Title & Location */}
+                            <div className="bg-white rounded-2xl shadow p-6">
+                                <h1 className="text-3xl font-extrabold text-gray-900 mb-3">
+                                    {activity.title}
+                                </h1>
+                                <div className="flex items-center gap-2 text-gray-600 mb-4">
+                                    <svg
+                                        className="w-5 h-5 text-forest-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                        />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    <span className="font-medium">{formatDuration(activity.duration)}</span>
+                                    <span className="font-medium">{getLocationString(activity.location)}</span>
                                 </div>
-                                {activity.maxParticipants && (
+
+                                {/* Stats row */}
+                                <div className="flex items-center gap-6 pb-5 border-b border-gray-100">
+                                    <div className="flex items-center gap-1.5">
+                                        <StarIcon />
+                                        <span className="font-bold text-gray-900">
+                                            {rating > 0 ? rating.toFixed(1) : '—'}
+                                        </span>
+                                        <span className="text-sm text-gray-500">({reviews} reviews)</span>
+                                    </div>
                                     <div className="flex items-center gap-1.5 text-gray-600">
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            <circle cx="12" cy="12" r="10" />
+                                            <path strokeLinecap="round" d="M12 6v6l4 2" />
                                         </svg>
-                                        <span className="font-medium">Max {activity.maxParticipants} people</span>
+                                        <span className="font-medium">{formatDuration(activity.duration)}</span>
                                     </div>
-                                )}
+                                    {activity.maxParticipants && (
+                                        <div className="flex items-center gap-1.5 text-gray-600">
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            <span className="font-medium">Max {activity.maxParticipants} people</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Description */}
+                                <div className="pt-5">
+                                    <h2 className="text-lg font-bold text-gray-900 mb-3">About This Activity</h2>
+                                    <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                                        {activity.description}
+                                    </p>
+                                </div>
                             </div>
 
-                            {/* Description */}
-                            <div className="pt-5">
-                                <h2 className="text-lg font-bold text-gray-900 mb-3">About This Activity</h2>
-                                <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                                    {activity.description}
-                                </p>
-                            </div>
+                            {/* What's Included / Not Included */}
+                            {(activity.included?.length > 0 || activity.excluded?.length > 0) && (
+                                <div className="bg-white rounded-2xl shadow p-6">
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        {activity.included?.length > 0 && (
+                                            <div>
+                                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">
+                                                    ✓ What's Included
+                                                </h3>
+                                                <ul className="space-y-2">
+                                                    {activity.included.map((item, idx) => (
+                                                        <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                                                            <span className="text-green-600 mt-0.5">✓</span>
+                                                            <span>{item}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {activity.excluded?.length > 0 && (
+                                            <div>
+                                                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">
+                                                    ✕ What's Not Included
+                                                </h3>
+                                                <ul className="space-y-2">
+                                                    {activity.excluded.map((item, idx) => (
+                                                        <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                                                            <span className="text-red-600 mt-0.5">✕</span>
+                                                            <span>{item}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Embedded Map */}
+                            {(activity.location?.lat || activity.coordinates) && (
+                                <div className="bg-white rounded-2xl shadow p-6">
+                                    <h2 className="text-lg font-bold text-gray-900 mb-4">Location</h2>
+                                    <div className="rounded-xl overflow-hidden">
+                                        <MapboxMap
+                                            activities={[activity]}
+                                            selectedId={activity._id || activity.id}
+                                            onSelect={null}
+                                            height="320px"
+                                            rounded={false}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* What's Included / Not Included */}
-                        {(activity.included?.length > 0 || activity.excluded?.length > 0) && (
-                            <div className="bg-white rounded-2xl shadow p-6">
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    {activity.included?.length > 0 && (
-                                        <div>
-                                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">
-                                                ✓ What's Included
-                                            </h3>
-                                            <ul className="space-y-2">
-                                                {activity.included.map((item, idx) => (
-                                                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                                                        <span className="text-green-600 mt-0.5">✓</span>
-                                                        <span>{item}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-                                    {activity.excluded?.length > 0 && (
-                                        <div>
-                                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">
-                                                ✕ What's Not Included
-                                            </h3>
-                                            <ul className="space-y-2">
-                                                {activity.excluded.map((item, idx) => (
-                                                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                                                        <span className="text-red-600 mt-0.5">✕</span>
-                                                        <span>{item}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
+                        {/* Right column - Booking card */}
+                        <div className="lg:col-span-1">
+                            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
+                                <div className="flex items-baseline gap-2 mb-5">
+                                    <span className="text-3xl font-extrabold text-forest-900">${activity.price}</span>
+                                    <span className="text-gray-500 text-sm">per person</span>
                                 </div>
-                            </div>
-                        )}
 
-                        {/* Embedded Map */}
-                        {(activity.location?.lat || activity.coordinates) && (
-                            <div className="bg-white rounded-2xl shadow p-6">
-                                <h2 className="text-lg font-bold text-gray-900 mb-4">Location</h2>
-                                <div className="rounded-xl overflow-hidden">
-                                    <MapboxMap
-                                        activities={[activity]}
-                                        selectedId={activity._id || activity.id}
-                                        onSelect={null}
-                                        height="320px"
-                                        rounded={false}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                                <button
+                                    onClick={() => setBookingOpen(true)}
+                                    className="w-full py-3.5 rounded-xl bg-forest-900 text-white font-bold hover:bg-forest-800 active:bg-forest-950 transition-colors mb-3"
+                                >
+                                    Book Now
+                                </button>
 
-                    {/* Right column - Booking card */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-                            <div className="flex items-baseline gap-2 mb-5">
-                                <span className="text-3xl font-extrabold text-forest-900">${activity.price}</span>
-                                <span className="text-gray-500 text-sm">per person</span>
-                            </div>
+                                <Link
+                                    to="/activities/map"
+                                    className="block w-full py-3 rounded-xl border-2 border-forest-900 text-forest-900 font-bold text-center hover:bg-forest-50 transition-colors"
+                                >
+                                    View on Map
+                                </Link>
 
-                            <button className="w-full py-3.5 rounded-xl bg-forest-900 text-white font-bold hover:bg-forest-800 active:bg-forest-950 transition-colors mb-3">
-                                Book Now
-                            </button>
-
-                            <Link
-                                to="/activities/map"
-                                className="block w-full py-3 rounded-xl border-2 border-forest-900 text-forest-900 font-bold text-center hover:bg-forest-50 transition-colors"
-                            >
-                                View on Map
-                            </Link>
-
-                            <div className="mt-6 pt-6 border-t border-gray-100 space-y-3 text-sm text-gray-600">
-                                <div className="flex items-center gap-2">
-                                    <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    <span>Instant confirmation</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    <span>Free cancellation up to 24h</span>
+                                <div className="mt-6 pt-6 border-t border-gray-100 space-y-3 text-sm text-gray-600">
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>Instant confirmation</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>Free cancellation up to 24h</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+            <BookingModal
+                activity={activity}
+                isOpen={bookingOpen}
+                onClose={() => setBookingOpen(false)}
+            />
+        </>
     );
 };
 

@@ -127,6 +127,17 @@ const Navbar = () => {
                                         Dashboard
                                     </Link>
                                 ) : null}
+                                {userRole === 'client' && (
+                                    <Link
+                                        to="/my-bookings"
+                                        className={`text-sm font-semibold transition-colors px-3 py-2 rounded-full ${isActive('/my-bookings')
+                                                ? 'bg-forest-50 text-forest-900 font-bold'
+                                                : 'text-gray-600 hover:text-forest-800 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        My Bookings
+                                    </Link>
+                                )}
                                 <span className="text-sm text-gray-600 font-medium max-w-[120px] truncate">
                                     {user?.name || user?.email}
                                 </span>
@@ -195,6 +206,15 @@ const Navbar = () => {
                                             className="flex-1 py-2 rounded-full text-sm font-semibold text-center bg-gold-500 text-forest-950"
                                         >
                                             Dashboard
+                                        </Link>
+                                    )}
+                                    {userRole === 'client' && (
+                                        <Link
+                                            to="/my-bookings"
+                                            onClick={() => setMobileOpen(false)}
+                                            className="flex-1 py-2 rounded-full text-sm font-semibold text-center bg-forest-50 text-forest-900 border border-forest-200"
+                                        >
+                                            My Bookings
                                         </Link>
                                     )}
                                     <button

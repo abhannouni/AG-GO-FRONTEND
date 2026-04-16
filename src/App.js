@@ -13,7 +13,9 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import MyBookingsPage from './pages/MyBookingsPage';
 import ToastNotification from './components/ToastNotification';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -30,6 +32,14 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route
+              path="/my-bookings"
+              element={
+                <ProtectedRoute roles={['client']}>
+                  <MyBookingsPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           {/* Auth pages use a bare layout (no Navbar/Footer) */}
           <Route path="/login" element={<LoginPage />} />

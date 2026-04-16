@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import BookingModal from './BookingModal';
 
 const CloseIcon = () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -64,6 +65,7 @@ const ActivitySidePanel = ({
     onClose,
     showViewDetails = true,
 }) => {
+    const [bookingOpen, setBookingOpen] = useState(false);
     if (!activity) return null;
 
     const imageUrl = (activity.images?.[0] || activity.image) || FALLBACK_IMAGE;
@@ -196,8 +198,14 @@ const ActivitySidePanel = ({
                         </Link>
                     )}
                     <button
+                        onClick={() => setBookingOpen(true)}
+                        className="w-full py-3 rounded-xl border-2 border-forest-900 text-forest-900 font-bold text-sm hover:bg-forest-50 transition-colors mb-2"
+                    >
+                        Book Now
+                    </button>
+                    <button
                         onClick={onClose}
-                        className="w-full py-2.5 rounded-xl text-forest-700 font-semibold text-sm hover:bg-forest-50 transition-colors"
+                        className="w-full py-2.5 rounded-xl text-gray-500 font-semibold text-sm hover:bg-gray-50 transition-colors"
                     >
                         Back to Map
                     </button>
@@ -208,6 +216,12 @@ const ActivitySidePanel = ({
             {isVisible && (
                 <div className="absolute inset-0 bg-black/25 z-20 lg:hidden" onClick={onClose} />
             )}
+
+            <BookingModal
+                activity={activity}
+                isOpen={bookingOpen}
+                onClose={() => setBookingOpen(false)}
+            />
         </>
     );
 };

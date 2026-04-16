@@ -51,6 +51,18 @@ export const updateBookingStatus = createAsyncThunk(
     }
 );
 
+export const cancelBooking = createAsyncThunk(
+    'bookings/cancel',
+    async (id, { rejectWithValue }) => {
+        try {
+            const res = await bookingsAPI.update(id, { status: 'cancelled' });
+            return res.data.data ?? res.data;
+        } catch (err) {
+            return rejectWithValue(err.message);
+        }
+    }
+);
+
 // ── Slice ─────────────────────────────────────────────────────────────────────
 
 const bookingsSlice = createSlice({
@@ -60,6 +72,7 @@ const bookingsSlice = createSlice({
         providerBookings: [],
         loading: false,
         createLoading: false,
+        cancelLoading: null, // stores the booking id being cancelled
         error: null,
         lastCreated: null,
     },
@@ -131,6 +144,22 @@ const bookingsSlice = createSlice({
             .addCase(updateBookingStatus.rejected, (state, action) => {
                 state.error = action.payload;
             });
+
+        // cancelBooking
+        builder
+            .addCase(cancelBooking.pending, (state, action) => {
+                state.cancelLoading = action.meta.arg; // the booking id
+            })
+            .addCase(cancelBooking.fulfilled, (state, action) => {
+                state.cancelLoading = null;
+                const updated = action.payload;
+                const idx = state.myBookings.findIndex((b) => b._id === updated._id);
+                if (idx !== -1) state.myBookings[idx] = updated;
+            })
+            .addCase(cancelBooking.rejected, (state, action) => {
+                state.cancelLoading = null;
+                state.error = action.payload;
+            });
     },
 });
 
@@ -141,6 +170,7 @@ export const selectMyBookings = (s) => s.bookings.myBookings;
 export const selectProviderBookings = (s) => s.bookings.providerBookings;
 export const selectBookingsLoading = (s) => s.bookings.loading;
 export const selectCreateBookingLoading = (s) => s.bookings.createLoading;
+export const selectCancelBookingLoading = (s) => s.bookings.cancelLoading;
 export const selectBookingsError = (s) => s.bookings.error;
 export const selectLastCreatedBooking = (s) => s.bookings.lastCreated;
 
