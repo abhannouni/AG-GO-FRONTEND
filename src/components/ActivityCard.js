@@ -36,17 +36,16 @@ const locStr = (loc) =>
     loc && typeof loc === 'object' ? loc.address ?? loc.city ?? '' : loc ?? '';
 
 const ActivityCard = ({ activity }) => {
-    const { title, category, duration, price, rating, image, description } = activity;
+    const { title, category, duration, price, rating, images, description } = activity;
     const location = locStr(activity.location);
     const colors = categoryColors[category] || { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-500' };
     const displayRating = ratingValue(rating);
     const displayReviews = reviewCount(activity);
-
     return (
         <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col">
             <div className="relative overflow-hidden" style={{ aspectRatio: '16/10' }}>
                 <img
-                    src={image}
+                    src={images[0]}
                     alt={title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"

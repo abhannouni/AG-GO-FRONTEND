@@ -85,6 +85,7 @@ const ActivitiesMapPage = () => {
 
     return (
         // Fill viewport below navbar (navbar is ~76px from Layout)
+        
         <div className="relative overflow-hidden" style={{ height: 'calc(100vh - 76px)' }}>
 
             {/* Loading overlay */}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const GlobeIcon = () => (
     <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -12,6 +13,11 @@ const footerLinks = {
     Activities: ['Adventure Tours', 'Cultural Experiences', 'Cooking Classes', 'Hammam & Spa', 'Surf Lessons'],
     Company: ['About Us', 'Blog', 'Careers', 'Press', 'Contact'],
     Support: ['Help Center', 'Safety Tips', 'Cancellation Policy', 'Accessibility', 'Terms of Service'],
+};
+
+const INTERNAL_FOOTER_ROUTES = {
+    'About Us': '/about',
+    Contact: '/contact',
 };
 
 const socialLinks = [
@@ -92,9 +98,18 @@ const Footer = () => {
                             <ul className="space-y-2.5">
                                 {links.map((link) => (
                                     <li key={link}>
-                                        <a href="/" className="text-sm hover:text-white hover:translate-x-0.5 transition-all inline-block">
-                                            {link}
-                                        </a>
+                                        {INTERNAL_FOOTER_ROUTES[link] ? (
+                                            <Link
+                                                to={INTERNAL_FOOTER_ROUTES[link]}
+                                                className="text-sm hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                                            >
+                                                {link}
+                                            </Link>
+                                        ) : (
+                                            <a href="/" className="text-sm hover:text-white hover:translate-x-0.5 transition-all inline-block">
+                                                {link}
+                                            </a>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

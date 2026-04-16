@@ -10,6 +10,8 @@ import ActivitiesMapPage from './pages/ActivitiesMapPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
 import ToastNotification from './components/ToastNotification';
 
 function App() {
@@ -23,6 +25,8 @@ function App() {
             <Route path="/trips" element={<TripsPage />} />
             <Route path="/activities" element={<ActivitiesPage />} />
             <Route path="/activities/map" element={<ActivitiesMapPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
           </Route>
           {/* Auth pages use a bare layout (no Navbar/Footer) */}
