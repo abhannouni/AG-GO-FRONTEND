@@ -14,6 +14,7 @@ export const CATEGORY_COLORS = {
     'Food & Culture': '#C1272D',
     Wellness: '#278d55',
     Beach: '#0ea5e9',
+    Surfing: '#00aaff',
 };
 
 const CATEGORY_LABELS = {
@@ -22,6 +23,7 @@ const CATEGORY_LABELS = {
     'Food & Culture': 'F',
     Wellness: 'W',
     Beach: 'B',
+    Surfing: 'S',
 };
 
 /** Resolve [lat, lng] from an activity, supporting multiple shapes.
@@ -32,7 +34,16 @@ const resolveCoords = (a) => {
         const [lat, lng] = a.coordinates;
         if (typeof lat === 'number' && typeof lng === 'number') return [lat, lng];
     }
-    // Shape 2 (backend GeoJSON): a.location.coordinates = { lat, lng } or [lng, lat]
+
+    // Shape 2 (backend): a.location.lat and a.location.lng directly
+    if (a.location && typeof a.location === 'object') {
+        const { lat, lng } = a.location;
+        if (typeof lat === 'number' && typeof lng === 'number') {
+            return [lat, lng];
+        }
+    }
+
+    // Shape 3 (backend GeoJSON): a.location.coordinates = { lat, lng } or [lng, lat]
     const locCoords = a.location?.coordinates;
     if (locCoords) {
         if (typeof locCoords.lat === 'number' && typeof locCoords.lng === 'number') {
@@ -91,6 +102,8 @@ const buildMiniPopupHTML = (props) => `
   </div>
 `;
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=100&q=80';
+
 /**
  * MapboxMap
  *
@@ -101,6 +114,7 @@ const buildMiniPopupHTML = (props) => `
  *                     If omitted, a mini Mapbox popup is shown instead
  *  height           – CSS height string (default '520px')
  *  rounded          – whether to apply rounded-2xl to the container (default true)
+ *  useImageMarkers  – whether to use image-based HTML markers (default true)
  */
 const MapboxMap = ({
     activities = [],
@@ -108,17 +122,21 @@ const MapboxMap = ({
     onSelect = null,
     height = '520px',
     rounded = true,
+    useImageMarkers = true,
 }) => {
     const mapContainer = useRef(null);
     const map = useRef(null);
+    const markers = useRef([]); // Store HTML markers
     const [mapLoaded, setMapLoaded] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     // Keep latest props in refs so event-handler closures never go stale
     const onSelectRef = useRef(onSelect);
     const activitiesRef = useRef(activities);
+    const selectedIdRef = useRef(selectedId);
     useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
     useEffect(() => { activitiesRef.current = activities; }, [activities]);
+    useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
     const token = process.env.REACT_APP_MAPBOX_TOKEN;
     const tokenMissing = !token || token === 'pk.your_mapbox_public_token_here';
@@ -368,9 +386,183 @@ const MapboxMap = ({
         if (source) source.setData(buildGeoJSON(activities));
     }, [activities, mapLoaded]);
 
-    // ── Effect 4: highlight/unhighlight the selected marker ──────────────────
+    // ── Effect 3.5: Create HTML markers with images (if enabled) ──────────────
     useEffect(() => {
-        if (!mapLoaded || !map.current) return;
+        if (!mapLoaded || !map.current || !useImageMarkers) return;
+
+        // Clear existing markers
+        markers.current.forEach((m) => m.marker.remove());
+        markers.current = [];
+
+        // Create a marker for each activity
+        activities.forEach((activity) => {
+            const coords = resolveCoords(activity);
+            if (!coords) return;
+
+            const [lat, lng] = coords;
+            const imageUrl = (activity.images?.[0] || activity.image) || FALLBACK_IMAGE;
+            const activityId = activity._id || activity.id;
+
+            // ── Outer shell ───────────────────────────────────────────────────
+            // Mapbox GL JS sets `position: absolute` and `transform: translate(Xpx,Ypx)`
+            // directly on the element you pass in. NEVER write to el.style.transform —
+            // doing so overwrites the map's positioning transform and sends the marker
+            // to the top-left corner. Keep el as a bare-minimum size container only.
+            const el = document.createElement('div');
+            el.className = 'custom-marker';
+            el.dataset.activityId = activityId;
+            el.style.cssText = `
+                width: 48px;
+                height: 48px;
+                cursor: pointer;
+            `;
+
+            // ── Inner visual element ──────────────────────────────────────────
+            // All hover transforms go here — Mapbox never touches this element.
+            const inner = document.createElement('div');
+            inner.className = 'marker-inner';
+            inner.style.cssText = `
+                position: relative;
+                width: 100%;
+                height: 100%;
+                background-image: url('${imageUrl}');
+                background-size: cover;
+                background-position: center;
+                border-radius: 50%;
+                border: 3px solid white;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                transform-origin: center center;
+                will-change: transform;
+            `;
+            el.appendChild(inner);
+
+            // ── Category colour ring (child of inner) ─────────────────────────
+            const ring = document.createElement('div');
+            ring.className = 'marker-ring';
+            ring.style.cssText = `
+                position: absolute;
+                inset: -5px;
+                border-radius: 50%;
+                border: 2px solid ${CATEGORY_COLORS[activity.category] || '#0a2e1c'};
+                opacity: 0.7;
+                transition: opacity 0.2s ease;
+                pointer-events: none;
+            `;
+            inner.appendChild(ring);
+
+            // ── Hover effects applied to inner, never to el ───────────────────
+            el.addEventListener('mouseenter', () => {
+                inner.style.transform = 'scale(1.1)';
+                inner.style.boxShadow = '0 6px 20px rgba(0,0,0,0.45)';
+                ring.style.opacity = '1';
+            });
+
+            el.addEventListener('mouseleave', () => {
+                // Check current selection state via ref to avoid stale closures
+                const isSelected = el.dataset.activityId === selectedIdRef.current;
+                inner.style.transform = isSelected ? 'scale(1.17)' : 'scale(1)';
+                inner.style.boxShadow = isSelected
+                    ? '0 6px 20px rgba(0,0,0,0.45)'
+                    : '0 4px 12px rgba(0,0,0,0.3)';
+                ring.style.opacity = isSelected ? '1' : '0.7';
+            });
+
+            // ── Click handler ─────────────────────────────────────────────────
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (onSelectRef.current) {
+                    onSelectRef.current(activity);
+                    map.current.easeTo({
+                        center: [lng, lat],
+                        zoom: Math.max(map.current.getZoom(), 10),
+                        duration: 600,
+                        offset: [-160, 0],
+                    });
+                } else {
+                    const props = {
+                        title: activity.title,
+                        location: getLocationString(activity.location),
+                        price: activity.price,
+                        rating: activity.rating?.average ?? activity.rating ?? 0,
+                        duration: formatDuration(activity.duration),
+                    };
+                    new mapboxgl.Popup({ offset: 30, maxWidth: '240px', closeButton: true })
+                        .setLngLat([lng, lat])
+                        .setHTML(buildMiniPopupHTML(props))
+                        .addTo(map.current);
+                }
+            });
+
+            // Create and store the Mapbox Marker — anchor:center so the middle
+            // of el lands exactly on [lng, lat].
+            const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+                .setLngLat([lng, lat])
+                .addTo(map.current);
+
+            markers.current.push({ marker, el, inner, activityId });
+        });
+
+        // Hide the default circle markers when using image markers
+        if (map.current.getLayer('unclustered-point')) {
+            map.current.setLayoutProperty('unclustered-point', 'visibility', 'none');
+            map.current.setLayoutProperty('unclustered-label', 'visibility', 'none');
+            map.current.setLayoutProperty('unclustered-glow', 'visibility', 'none');
+        }
+
+        return () => {
+            markers.current.forEach((m) => m.marker.remove());
+            markers.current = [];
+        };
+    }, [activities, mapLoaded, useImageMarkers, onSelect]);
+
+    // ── Effect 3.6: Update marker styles when selection changes ──────────────
+    // Applies scale/ring changes to `inner` — never touches el.style.transform.
+    useEffect(() => {
+        if (!mapLoaded || !map.current || !useImageMarkers) return;
+
+        markers.current.forEach(({ el, inner, activityId }) => {
+            const isSelected = activityId === selectedId;
+            // inner may be queried from el if not directly stored
+            const innerEl = inner || el.querySelector('.marker-inner');
+            const ring = el.querySelector('.marker-ring');
+
+            if (isSelected) {
+                if (innerEl) {
+                    innerEl.style.transform = 'scale(1.17)'; // visual equivalent of 48→56px
+                    innerEl.style.borderWidth = '4px';
+                    innerEl.style.boxShadow = '0 6px 20px rgba(0,0,0,0.45)';
+                }
+                if (ring) ring.style.opacity = '1';
+            } else {
+                if (innerEl) {
+                    innerEl.style.transform = 'scale(1)';
+                    innerEl.style.borderWidth = '3px';
+                    innerEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                }
+                if (ring) ring.style.opacity = '0.7';
+            }
+        });
+    }, [selectedId, mapLoaded, useImageMarkers]);
+
+    // Helper functions for markers
+    const getLocationString = (location) => {
+        if (!location) return 'Location TBD';
+        if (typeof location === 'string') return location;
+        return location.address || location.city || 'Location TBD';
+    };
+
+    const formatDuration = (duration) => {
+        if (!duration) return 'N/A';
+        const num = Number(duration);
+        if (isNaN(num)) return duration;
+        return num === 1 ? '1 hr' : `${num} hrs`;
+    };
+
+    // ── Effect 4: highlight/unhighlight the selected marker ──────────────────
+    // (Only for circle markers - when useImageMarkers is false)
+    useEffect(() => {
+        if (!mapLoaded || !map.current || useImageMarkers) return;
         if (!map.current.getLayer('unclustered-point')) return;
 
         const sid = selectedId ?? -1;
@@ -387,14 +579,16 @@ const MapboxMap = ({
         map.current.setPaintProperty('unclustered-glow', 'circle-opacity', [
             'case', ['==', ['get', 'id'], sid], 0.32, 0.18,
         ]);
-    }, [selectedId, mapLoaded]);
+    }, [selectedId, mapLoaded, useImageMarkers]);
 
     // ── Effect 5: smooth fly to selected activity ─────────────────────────────
     useEffect(() => {
-        if (!mapLoaded || !map.current || !selectedId) return;
-        const activity = activities.find((a) => a.id === selectedId);
+        if (!mapLoaded || !map.current || !selectedId || useImageMarkers) return;
+        const activity = activities.find((a) => (a._id || a.id) === selectedId);
         if (!activity) return;
-        const [lat, lng] = activity.coordinates;
+        const coords = resolveCoords(activity);
+        if (!coords) return;
+        const [lat, lng] = coords;
         map.current.easeTo({
             center: [lng, lat],
             zoom: Math.max(map.current.getZoom(), 9),
@@ -402,7 +596,7 @@ const MapboxMap = ({
             offset: [onSelect ? -160 : 0, 0],
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedId, mapLoaded]);
+    }, [selectedId, mapLoaded, useImageMarkers]);
 
     // ── Token missing placeholder ─────────────────────────────────────────────
     if (tokenMissing) {

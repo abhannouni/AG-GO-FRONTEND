@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Spinner from './Spinner';
-import { activityCategories } from '../constants/uiConstants';
+import { activityCategories, moroccanCities } from '../constants/uiConstants';
 
 const CATEGORIES = activityCategories.filter((c) => c !== 'All');
+const CITIES = moroccanCities;
 
 /* ─── Field helpers ──────────────────────────────────────────────── */
 
@@ -58,6 +59,11 @@ const EMPTY_FORM = {
     price: '',
     duration: '',
     locationAddress: '',
+    lat: '',
+    lng: '',
+    maxParticipants: '',
+    included: [],
+    excluded: [],
     images: [],
 };
 
@@ -72,6 +78,11 @@ const toFormState = (act) => ({
         typeof act.location === 'string'
             ? act.location
             : act.location?.address ?? '',
+    lat: act.location?.lat ?? '',
+    lng: act.location?.lng ?? '',
+    maxParticipants: act.maxParticipants ?? '',
+    included: Array.isArray(act.included) ? [...act.included] : [],
+    excluded: Array.isArray(act.excluded) ? [...act.excluded] : [],
     images: Array.isArray(act.images)
         ? [...act.images]
         : act.image
@@ -96,6 +107,8 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
     const [form, setForm] = useState(EMPTY_FORM);
     const [errors, setErrors] = useState({});
     const [imageUrl, setImageUrl] = useState('');
+    const [includedItem, setIncludedItem] = useState('');
+    const [excludedItem, setExcludedItem] = useState('');
     const firstRef = useRef(null);
     const isEditing = !!activity;
 
@@ -105,6 +118,8 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
             setForm(activity ? toFormState(activity) : EMPTY_FORM);
             setErrors({});
             setImageUrl('');
+            setIncludedItem('');
+            setExcludedItem('');
         }
     }, [isOpen, activity]);
 
@@ -135,6 +150,9 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
         if (!form.city.trim()) e.city = 'City is required';
         if (!form.price || Number(form.price) <= 0) e.price = 'Enter a price greater than 0';
         if (!form.duration || Number(form.duration) <= 0) e.duration = 'Enter a duration greater than 0';
+        if (form.lat && isNaN(Number(form.lat))) e.lat = 'Enter a valid latitude';
+        if (form.lng && isNaN(Number(form.lng))) e.lng = 'Enter a valid longitude';
+        if (form.maxParticipants && Number(form.maxParticipants) <= 0) e.maxParticipants = 'Must be greater than 0';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -147,10 +165,38 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
         setImageUrl('');
     };
 
+    const addIncludedItem = () => {
+        const item = includedItem.trim();
+        if (item && !form.included.includes(item)) {
+            set('included', [...form.included, item]);
+        }
+        setIncludedItem('');
+    };
+
+    const addExcludedItem = () => {
+        const item = excludedItem.trim();
+        if (item && !form.excluded.includes(item)) {
+            set('excluded', [...form.excluded, item]);
+        }
+        setExcludedItem('');
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!validate()) return;
-        onSubmit({
+
+        // Build location object
+        const location = {
+            address: form.locationAddress.trim(),
+        };
+
+        // Add coordinates if provided
+        if (form.lat && form.lng) {
+            location.lat = Number(form.lat);
+            location.lng = Number(form.lng);
+        }
+
+        const payload = {
             title: form.title.trim(),
             description: form.description.trim(),
             category: form.category,
@@ -158,8 +204,17 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
             price: Number(form.price),
             duration: Number(form.duration),
             images: form.images,
-            location: { address: form.locationAddress.trim() },
-        });
+            location,
+            included: form.included,
+            excluded: form.excluded,
+        };
+
+        // Add maxParticipants if provided
+        if (form.maxParticipants) {
+            payload.maxParticipants = Number(form.maxParticipants);
+        }
+
+        onSubmit(payload);
     };
 
     return (
@@ -250,13 +305,21 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
                             <SectionTitle id="section-location">Location</SectionTitle>
                             <div className="flex flex-col gap-4">
                                 <FieldRow label="City" required error={errors.city}>
-                                    <input
-                                        type="text"
-                                        value={form.city}
-                                        onChange={(e) => set('city', e.target.value)}
-                                        placeholder="e.g. Agadir"
-                                        className={ic(errors.city)}
-                                    />
+                                    <div className="relative">
+                                        <select
+                                            value={form.city}
+                                            onChange={(e) => set('city', e.target.value)}
+                                            className={`${ic(errors.city)} appearance-none cursor-pointer pr-10`}
+                                        >
+                                            <option value="">Select a city</option>
+                                            {CITIES.map((c) => (
+                                                <option key={c} value={c}>{c}</option>
+                                            ))}
+                                        </select>
+                                        <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                                            <ChevronDown />
+                                        </span>
+                                    </div>
                                 </FieldRow>
                                 <FieldRow label="Address (optional)">
                                     <input
@@ -266,6 +329,32 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
                                         placeholder="e.g. near the south entrance of Erg Chebbi"
                                         className={ic()}
                                     />
+                                </FieldRow>
+                                <FieldRow label="Coordinates (optional)">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <input
+                                                type="number"
+                                                value={form.lat}
+                                                onChange={(e) => set('lat', e.target.value)}
+                                                placeholder="Latitude"
+                                                step="any"
+                                                className={ic(errors.lat)}
+                                            />
+                                            {errors.lat && <p className="mt-1 text-xs text-red-600">{errors.lat}</p>}
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="number"
+                                                value={form.lng}
+                                                onChange={(e) => set('lng', e.target.value)}
+                                                placeholder="Longitude"
+                                                step="any"
+                                                className={ic(errors.lng)}
+                                            />
+                                            {errors.lng && <p className="mt-1 text-xs text-red-600">{errors.lng}</p>}
+                                        </div>
+                                    </div>
                                 </FieldRow>
                             </div>
                         </section>
@@ -306,6 +395,18 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
                                             hrs
                                         </span>
                                     </div>
+                                </FieldRow>
+                            </div>
+                            <div className="mt-4">
+                                <FieldRow label="Max Participants (optional)" error={errors.maxParticipants}>
+                                    <input
+                                        type="number"
+                                        value={form.maxParticipants}
+                                        onChange={(e) => set('maxParticipants', e.target.value)}
+                                        placeholder="e.g. 8"
+                                        min="1"
+                                        className={ic(errors.maxParticipants)}
+                                    />
                                 </FieldRow>
                             </div>
                         </section>
@@ -377,6 +478,118 @@ const ActivityForm = ({ isOpen, activity, loading = false, onClose, onSubmit }) 
                                                     set('images', form.images.filter((_, j) => j !== i))
                                                 }
                                                 aria-label="Remove image"
+                                                className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                            >
+                                                <XSmall />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </section>
+
+                        <Divider />
+
+                        {/* Included Items */}
+                        <section aria-labelledby="section-included">
+                            <SectionTitle id="section-included">What's Included (optional)</SectionTitle>
+                            <p className="text-xs text-gray-400 -mt-2 mb-4 leading-relaxed">
+                                Add items that are included in the activity. Press Enter or click Add.
+                            </p>
+                            <div className="flex gap-2 mb-3">
+                                <input
+                                    type="text"
+                                    value={includedItem}
+                                    onChange={(e) => setIncludedItem(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            addIncludedItem();
+                                        }
+                                    }}
+                                    placeholder="e.g. BPJEPS certified instructor"
+                                    className={`${FIELD_NORMAL} flex-1`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={addIncludedItem}
+                                    className="flex-shrink-0 px-5 py-3 rounded-xl bg-forest-50 text-forest-700 text-sm font-semibold hover:bg-forest-100 transition-colors border border-forest-100"
+                                >
+                                    Add
+                                </button>
+                            </div>
+
+                            {form.included.length > 0 && (
+                                <ul className="flex flex-col gap-2">
+                                    {form.included.map((item, i) => (
+                                        <li
+                                            key={i}
+                                            className="flex items-center gap-2.5 bg-green-50 rounded-xl px-3 py-2.5 border border-green-100"
+                                        >
+                                            <span className="text-green-600 text-sm">✓</span>
+                                            <span className="text-xs text-gray-700 flex-1">{item}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    set('included', form.included.filter((_, j) => j !== i))
+                                                }
+                                                aria-label="Remove item"
+                                                className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                            >
+                                                <XSmall />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </section>
+
+                        <Divider />
+
+                        {/* Excluded Items */}
+                        <section aria-labelledby="section-excluded">
+                            <SectionTitle id="section-excluded">What's Not Included (optional)</SectionTitle>
+                            <p className="text-xs text-gray-400 -mt-2 mb-4 leading-relaxed">
+                                Add items that participants need to bring. Press Enter or click Add.
+                            </p>
+                            <div className="flex gap-2 mb-3">
+                                <input
+                                    type="text"
+                                    value={excludedItem}
+                                    onChange={(e) => setExcludedItem(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            addExcludedItem();
+                                        }
+                                    }}
+                                    placeholder="e.g. Swimwear"
+                                    className={`${FIELD_NORMAL} flex-1`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={addExcludedItem}
+                                    className="flex-shrink-0 px-5 py-3 rounded-xl bg-forest-50 text-forest-700 text-sm font-semibold hover:bg-forest-100 transition-colors border border-forest-100"
+                                >
+                                    Add
+                                </button>
+                            </div>
+
+                            {form.excluded.length > 0 && (
+                                <ul className="flex flex-col gap-2">
+                                    {form.excluded.map((item, i) => (
+                                        <li
+                                            key={i}
+                                            className="flex items-center gap-2.5 bg-red-50 rounded-xl px-3 py-2.5 border border-red-100"
+                                        >
+                                            <span className="text-red-600 text-sm">✕</span>
+                                            <span className="text-xs text-gray-700 flex-1">{item}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    set('excluded', form.excluded.filter((_, j) => j !== i))
+                                                }
+                                                aria-label="Remove item"
                                                 className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                                             >
                                                 <XSmall />

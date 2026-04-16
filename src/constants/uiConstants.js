@@ -5,10 +5,10 @@ export const activityCategories = [
     'Food & Culture',
     'Wellness',
     'Beach',
+    'Surfing',
 ];
 
 export const moroccanCities = [
-    'All Morocco',
     'Marrakech',
     'Fes',
     'Chefchaouen',
@@ -18,6 +18,13 @@ export const moroccanCities = [
     'Essaouira',
     'Agadir',
     'Tangier',
+    'Bordeaux',
+    'Lacanau',
+];
+
+export const moroccanCitiesWithAll = [
+    'All Morocco',
+    ...moroccanCities,
 ];
 
 export const stats = [

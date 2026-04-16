@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import TripsPage from './pages/TripsPage';
 import ActivitiesPage from './pages/ActivitiesPage';
 import ActivitiesMapPage from './pages/ActivitiesMapPage';
+import ActivityDetailPage from './pages/ActivityDetailPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -25,6 +26,7 @@ function App() {
             <Route path="/trips" element={<TripsPage />} />
             <Route path="/activities" element={<ActivitiesPage />} />
             <Route path="/activities/map" element={<ActivitiesMapPage />} />
+            <Route path="/activities/:id" element={<ActivityDetailPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
