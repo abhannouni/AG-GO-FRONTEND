@@ -178,7 +178,7 @@ const FilterBar = ({
             <div className="container mx-auto px-6">
 
                 {/* ── Main filter row ── */}
-                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 py-4">
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 py-4">
 
                     {/* Search input */}
                     <div className="relative w-full lg:w-64 flex-shrink-0">
@@ -219,7 +219,7 @@ const FilterBar = ({
                         <div
                             role="group"
                             aria-label="Filter by category"
-                            className="flex gap-2 overflow-x-auto no-scrollbar min-w-0 flex-1 py-0.5"
+                            className="flex gap-2 overflow-x-auto no-scrollbar w-full lg:min-w-0 lg:flex-1 py-0.5"
                         >
                             {categories.map((cat) => (
                                 <button
@@ -242,7 +242,7 @@ const FilterBar = ({
                     )}
 
                     {/* Right-hand controls: selects, sort, extra actions, reset */}
-                    <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto lg:flex-shrink-0">
                         {selects.map((sel) => (
                             <SelectControl
                                 key={sel.id}

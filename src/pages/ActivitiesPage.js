@@ -112,20 +112,22 @@ const ActivitiesPage = () => {
                     </p>
 
                     {/* Stats + Map link */}
-                    <div className="flex flex-wrap items-center gap-6 mt-8">
-                        {[
-                            { value: loading ? '…' : activities.length, label: 'Activities' },
-                            { value: '5', label: 'Categories' },
-                            { value: '4.7★', label: 'Avg. Rating' },
-                        ].map((s) => (
-                            <div key={s.label} className="flex items-center gap-2">
-                                <span className="text-gold-400 font-extrabold text-xl">{s.value}</span>
-                                <span className="text-white/60 text-sm">{s.label}</span>
-                            </div>
-                        ))}
+                    <div className="flex flex-wrap items-center gap-4 mt-8">
+                        <div className="flex flex-wrap items-center gap-4 lg:gap-6">
+                            {[
+                                { value: loading ? '…' : activities.length, label: 'Activities' },
+                                { value: '5', label: 'Categories' },
+                                { value: '4.7★', label: 'Avg. Rating' },
+                            ].map((s) => (
+                                <div key={s.label} className="flex items-center gap-2">
+                                    <span className="text-gold-400 font-extrabold text-xl">{s.value}</span>
+                                    <span className="text-white/60 text-sm">{s.label}</span>
+                                </div>
+                            ))}
+                        </div>
                         <Link
                             to="/activities/map"
-                            className="ml-auto flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold-500 text-forest-950 text-sm font-bold hover:bg-gold-400 transition-colors shadow-lg"
+                            className="w-full sm:w-auto sm:ml-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gold-500 text-forest-950 text-sm font-bold hover:bg-gold-400 transition-colors shadow-lg"
                         >
                             <MapLinkIcon />
                             Open Map View
