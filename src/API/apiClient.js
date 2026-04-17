@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:3002/api/v1';
+const BASE_URL = process.env.API_BASE_URL || 'https://af-go-backend-production.up.railway.app/api/v1';
 
 const apiClient = axios.create({
     baseURL: BASE_URL,
