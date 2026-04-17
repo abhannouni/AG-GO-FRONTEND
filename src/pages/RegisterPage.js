@@ -15,7 +15,7 @@ const RegisterPage = () => {
     const [form, setForm] = useState({ username: '', email: '', password: '', role: 'client' });
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { loading, error, registerSuccess } = useSelector(selectAuth);
+    const { loading, registerSuccess } = useSelector(selectAuth);
 
     useEffect(() => {
         dispatch(clearAuthError());

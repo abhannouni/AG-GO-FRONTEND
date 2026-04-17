@@ -17,7 +17,7 @@ const LoginPage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
-    const { loading, error, user } = useSelector(selectAuth);
+    const { loading, user } = useSelector(selectAuth);
 
     const from = location.state?.from?.pathname || '/';
 
