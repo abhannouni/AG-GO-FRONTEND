@@ -181,8 +181,13 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeInUp flex flex-col max-h-[90vh]">
 
                 {/* Hero */}
-                <div className="relative h-36 flex-shrink-0">
-                    <img src={imageUrl} alt={activity.title} className="w-full h-full object-cover" />
+                <div className="relative h-36 flex-shrink-0 overflow-hidden">
+                    <img
+                        src={imageUrl}
+                        alt={activity.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => { if (e.target.src !== FALLBACK_IMAGE) e.target.src = FALLBACK_IMAGE; }}
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                     <button
                         onClick={onClose}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { moroccanCities, activityCategories } from '../constants/uiConstants';
 
 const LocationIcon = () => (
@@ -22,13 +23,16 @@ const SocialLinks = [
 ];
 
 const Hero = ({ onSearch }) => {
+    const navigate = useNavigate();
     const [location, setLocation] = useState('');
     const [activityType, setActivityType] = useState('');
 
     const handleSearch = () => {
         if (onSearch) onSearch({ location, activityType });
-        const tripsSection = document.getElementById('trips');
-        if (tripsSection) tripsSection.scrollIntoView({ behavior: 'smooth' });
+        const params = new URLSearchParams();
+        if (location) params.set('city', location);
+        if (activityType) params.set('category', activityType);
+        navigate(`/activities${params.toString() ? `?${params.toString()}` : ''}`);
     };
 
     return (

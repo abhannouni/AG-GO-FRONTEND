@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import BookingModal from './BookingModal';
 
 const StarIcon = () => (
     <svg className="w-3.5 h-3.5 text-amber-400 fill-amber-400" viewBox="0 0 20 20">
@@ -21,76 +22,95 @@ const ClockIcon = () => (
 );
 
 const categoryColors = {
-    'City Tour': 'bg-purple-100 text-purple-700',
-    'Adventure': 'bg-orange-100 text-orange-700',
-    'Cultural': 'bg-amber-100 text-amber-700',
-    'Beach': 'bg-sky-100 text-sky-700',
-    'Wellness': 'bg-green-100 text-green-700',
-    'Food & Culture': 'bg-red-100 text-red-700',
+    'City Tour':     'bg-purple-100 text-purple-700',
+    'Adventure':     'bg-orange-100 text-orange-700',
+    'Cultural':      'bg-amber-100 text-amber-700',
+    'Beach':         'bg-sky-100 text-sky-700',
+    'Wellness':      'bg-green-100 text-green-700',
+    'Food & Culture':'bg-red-100 text-red-700',
 };
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80';
 
 const ratingValue = (r) => (r && typeof r === 'object' ? r.average : r) ?? 0;
 
 const TripCard = ({ trip }) => {
+    const [modalOpen, setModalOpen] = useState(false);
+
     const { title, duration, price, rating, image, category } = trip;
     const location = trip.location && typeof trip.location === 'object'
         ? trip.location.address ?? trip.location.city ?? ''
         : trip.location ?? '';
     const displayRating = ratingValue(rating);
     const displayReviews = trip.reviews ?? trip.rating?.count ?? 0;
+    const imageUrl = image || FALLBACK_IMAGE;
 
     return (
-        <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col">
-            {/* Image */}
-            <div className="relative overflow-hidden aspect-[4/3]">
-                <img
-                    src={image}
-                    alt={title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                />
-                {/* Category Badge */}
-                <span className={`absolute top-3 left-3 text-xs font-semibold px-3 py-1 rounded-full ${categoryColors[category] || 'bg-gray-100 text-gray-700'}`}>
-                    {category}
-                </span>
-                {/* Price Badge */}
-                <div className="absolute bottom-3 right-3 bg-forest-900 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
-                    from ${price}
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-5 flex flex-col flex-1">
-                <h3 className="text-gray-900 font-bold text-base mb-2 line-clamp-1 group-hover:text-forest-800 transition-colors">
-                    {title}
-                </h3>
-
-                <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-3">
-                    <PinIcon />
-                    <span className="truncate">{location}, Morocco</span>
-                </div>
-
-                <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
-                    {/* Rating */}
-                    <div className="flex items-center gap-1">
-                        <StarIcon />
-                        <span className="text-sm font-bold text-gray-800">{displayRating ? displayRating.toFixed(1) : '—'}</span>
-                        <span className="text-xs text-gray-400">({displayReviews})</span>
-                    </div>
-
-                    {/* Duration */}
-                    <div className="flex items-center gap-1 text-gray-500 text-xs">
-                        <ClockIcon />
-                        <span>{duration}</span>
+        <>
+            <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col">
+                {/* Image */}
+                <div className="relative overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                    <img
+                        src={imageUrl}
+                        alt={title}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                        onError={(e) => {
+                            if (e.target.src !== FALLBACK_IMAGE) e.target.src = FALLBACK_IMAGE;
+                        }}
+                    />
+                    {/* Category Badge */}
+                    <span className={`absolute top-3 left-3 text-xs font-semibold px-3 py-1 rounded-full ${categoryColors[category] || 'bg-gray-100 text-gray-700'}`}>
+                        {category}
+                    </span>
+                    {/* Price Badge */}
+                    <div className="absolute bottom-3 right-3 bg-forest-900 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                        from ${price}
                     </div>
                 </div>
 
-                {/* Book Button */}
-                <button className="mt-4 w-full py-2.5 rounded-xl bg-forest-50 text-forest-900 text-sm font-semibold hover:bg-forest-900 hover:text-white transition-all duration-200 border border-forest-100 hover:border-forest-900">
-                    Book Now
-                </button>
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                    <h3 className="text-gray-900 font-bold text-base mb-2 line-clamp-1 group-hover:text-forest-800 transition-colors">
+                        {title}
+                    </h3>
+
+                    <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-3">
+                        <PinIcon />
+                        <span className="truncate">{location || 'Morocco'}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+                        {/* Rating */}
+                        <div className="flex items-center gap-1">
+                            <StarIcon />
+                            <span className="text-sm font-bold text-gray-800">{displayRating ? displayRating.toFixed(1) : '—'}</span>
+                            <span className="text-xs text-gray-400">({displayReviews})</span>
+                        </div>
+
+                        {/* Duration */}
+                        <div className="flex items-center gap-1 text-gray-500 text-xs">
+                            <ClockIcon />
+                            <span>{duration}</span>
+                        </div>
+                    </div>
+
+                    {/* Book Button */}
+                    <button
+                        onClick={() => setModalOpen(true)}
+                        className="mt-4 w-full py-2.5 rounded-xl bg-forest-50 text-forest-900 text-sm font-semibold hover:bg-forest-900 hover:text-white transition-all duration-200 border border-forest-100 hover:border-forest-900"
+                    >
+                        Book Now
+                    </button>
+                </div>
             </div>
-        </div>
+
+            <BookingModal
+                activity={trip}
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+            />
+        </>
     );
 };
 

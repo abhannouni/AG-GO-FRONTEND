@@ -25,6 +25,14 @@ export const bookingsAPI = {
     update: (id, data) => apiClient.patch(`/bookings/${id}`, data),
 };
 
+export const tripsAPI = {
+    list: (params) => apiClient.get('/trips', { params }),
+    getById: (id) => apiClient.get(`/trips/${id}`),
+    create: (data) => apiClient.post('/trips', data),
+    update: (id, data) => apiClient.patch(`/trips/${id}`, data),
+    remove: (id) => apiClient.delete(`/trips/${id}`),
+};
+
 export const healthAPI = {
     check: () => apiClient.get('/health'),
 };

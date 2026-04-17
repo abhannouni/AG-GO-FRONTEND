@@ -1,7 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import TripCard from '../components/TripCard';
 import FilterBar from '../components/FilterBar';
-// Trips API not yet available — trips will be fetched from backend once endpoint is added
+import Spinner from '../components/Spinner';
+import { fetchTrips, selectTrips, selectTripsLoading, selectTripsError } from '../redux/trips/tripsSlice';
 
 const TRIP_CATEGORIES = ['All', 'City Tour', 'Adventure', 'Cultural', 'Beach'];
 
@@ -25,10 +27,19 @@ const DEFAULT_REGION = 'All Regions';
 const DEFAULT_SORT = 'featured';
 
 const TripsPage = () => {
+    const dispatch = useDispatch();
+    const trips = useSelector(selectTrips);
+    const loading = useSelector(selectTripsLoading);
+    const error = useSelector(selectTripsError);
+
     const [activeCategory, setActiveCategory] = useState(DEFAULT_CATEGORY);
     const [activeRegion, setActiveRegion] = useState(DEFAULT_REGION);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState(DEFAULT_SORT);
+
+    useEffect(() => {
+        dispatch(fetchTrips());
+    }, [dispatch]);
 
     const handleReset = useCallback(() => {
         setActiveCategory(DEFAULT_CATEGORY);
@@ -38,41 +49,39 @@ const TripsPage = () => {
     }, []);
 
     const filteredTrips = useMemo(() => {
-        let trips = [];
+        let list = [...trips];
 
         if (activeCategory !== DEFAULT_CATEGORY) {
-            trips = trips.filter((t) => t.category === activeCategory);
+            list = list.filter((t) => t.category === activeCategory);
         }
         if (activeRegion !== DEFAULT_REGION) {
-            trips = trips.filter((t) => t.region === activeRegion);
+            list = list.filter((t) => t.region === activeRegion);
         }
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
-            trips = trips.filter(
-                (t) => {
-                    const loc = t.location && typeof t.location === 'object'
-                        ? t.location.address ?? ''
-                        : t.location ?? '';
-                    return (
-                        t.title.toLowerCase().includes(q) ||
-                        loc.toLowerCase().includes(q) ||
-                        t.description.toLowerCase().includes(q)
-                    );
-                }
-            );
+            list = list.filter((t) => {
+                const loc = t.location && typeof t.location === 'object'
+                    ? t.location.address ?? ''
+                    : t.location ?? '';
+                return (
+                    (t.title || '').toLowerCase().includes(q) ||
+                    loc.toLowerCase().includes(q) ||
+                    (t.description || '').toLowerCase().includes(q)
+                );
+            });
         }
 
         switch (sortBy) {
-            case 'price-asc': return trips.sort((a, b) => a.price - b.price);
-            case 'price-desc': return trips.sort((a, b) => b.price - a.price);
-            case 'rating': return trips.sort((a, b) => {
-                const ra = a.rating && typeof a.rating === 'object' ? a.rating.average : a.rating ?? 0;
-                const rb = b.rating && typeof b.rating === 'object' ? b.rating.average : b.rating ?? 0;
+            case 'price-asc': return list.sort((a, b) => a.price - b.price);
+            case 'price-desc': return list.sort((a, b) => b.price - a.price);
+            case 'rating': return list.sort((a, b) => {
+                const ra = a.rating?.average ?? 0;
+                const rb = b.rating?.average ?? 0;
                 return rb - ra;
             });
-            default: return trips.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+            default: return list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
         }
-    }, [activeCategory, activeRegion, searchQuery, sortBy]);
+    }, [trips, activeCategory, activeRegion, searchQuery, sortBy]);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -93,7 +102,6 @@ const TripsPage = () => {
                         From desert adventures to coastal escapes — find the perfect Moroccan journey.
                     </p>
 
-                    {/* Stats row */}
                     <div className="flex flex-wrap gap-6 mt-8">
                         {[
                             { value: '6+', label: 'Regions Covered' },
@@ -135,37 +143,54 @@ const TripsPage = () => {
 
             {/* Results */}
             <div className="container mx-auto px-6 py-10">
-                {/* Results count */}
-                <p className="text-sm text-gray-500 mb-6">
-                    <span className="font-semibold text-gray-800">{filteredTrips.length}</span>{' '}
-                    {filteredTrips.length === 1 ? 'trip' : 'trips'} found
-                </p>
-
-                {filteredTrips.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredTrips.map((trip) => (
-                            <TripCard key={trip.id} trip={trip} />
-                        ))}
+                {loading ? (
+                    <div className="flex justify-center py-24">
+                        <Spinner />
+                    </div>
+                ) : error ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                        <p className="text-red-600 font-semibold mb-2">Failed to load trips</p>
+                        <p className="text-gray-400 text-sm">{error}</p>
+                        <button
+                            onClick={() => dispatch(fetchTrips())}
+                            className="mt-4 px-6 py-2.5 rounded-full bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors"
+                        >
+                            Retry
+                        </button>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-24 text-center">
-                        <div className="w-20 h-20 bg-forest-50 rounded-full flex items-center justify-center mb-6">
-                            <svg className="w-10 h-10 text-forest-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                            </svg>
-                        </div>
-                        <p className="text-gray-700 font-bold text-xl mb-2">Trips Coming Soon</p>
-                        <p className="text-gray-400 text-sm max-w-sm">
-                            Our curated Morocco trips &amp; tours will be available here shortly.
-                            In the meantime, explore our activities below.
+                    <>
+                        <p className="text-sm text-gray-500 mb-6">
+                            <span className="font-semibold text-gray-800">{filteredTrips.length}</span>{' '}
+                            {filteredTrips.length === 1 ? 'trip' : 'trips'} found
                         </p>
-                        <a
-                            href="/activities"
-                            className="mt-6 px-6 py-2.5 rounded-full bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors"
-                        >
-                            Browse Activities
-                        </a>
-                    </div>
+
+                        {filteredTrips.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {filteredTrips.map((trip) => (
+                                    <TripCard key={trip._id} trip={trip} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-24 text-center">
+                                <div className="w-20 h-20 bg-forest-50 rounded-full flex items-center justify-center mb-6">
+                                    <svg className="w-10 h-10 text-forest-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                    </svg>
+                                </div>
+                                <p className="text-gray-700 font-bold text-xl mb-2">No trips found</p>
+                                <p className="text-gray-400 text-sm max-w-sm">
+                                    Try adjusting your filters or search query.
+                                </p>
+                                <button
+                                    onClick={handleReset}
+                                    className="mt-6 px-6 py-2.5 rounded-full bg-forest-900 text-white text-sm font-semibold hover:bg-forest-800 transition-colors"
+                                >
+                                    Clear Filters
+                                </button>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

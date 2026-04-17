@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ActivityCard from '../components/ActivityCard';
 import FilterBar from '../components/FilterBar';
 import Spinner from '../components/Spinner';
 import { fetchActivities, selectActivities, selectActivitiesLoading, selectActivitiesError } from '../redux/activities/activitiesSlice';
-import { activityCategories } from '../constants/uiConstants';
+import { activityCategories, moroccanCities } from '../constants/uiConstants';
 
 const MapLinkIcon = () => (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -21,10 +21,21 @@ const SORT_OPTIONS = [
 ];
 
 const DEFAULT_CATEGORY = 'All';
+const DEFAULT_CITY = 'All Cities';
 const DEFAULT_SORT = 'popular';
 
+const CITY_OPTIONS = [
+    { value: DEFAULT_CITY, label: DEFAULT_CITY },
+    ...moroccanCities.map((c) => ({ value: c, label: c })),
+];
+
 const ActivitiesPage = () => {
-    const [activeCategory, setActiveCategory] = useState(DEFAULT_CATEGORY);
+    const [searchParams] = useSearchParams();
+    const [activeCategory, setActiveCategory] = useState(() => {
+        const cat = searchParams.get('category');
+        return cat && activityCategories.includes(cat) ? cat : DEFAULT_CATEGORY;
+    });
+    const [activeCity, setActiveCity] = useState(() => searchParams.get('city') || DEFAULT_CITY);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState(DEFAULT_SORT);
     const dispatch = useDispatch();
@@ -38,6 +49,7 @@ const ActivitiesPage = () => {
 
     const handleReset = useCallback(() => {
         setActiveCategory(DEFAULT_CATEGORY);
+        setActiveCity(DEFAULT_CITY);
         setSearchQuery('');
         setSortBy(DEFAULT_SORT);
     }, []);
@@ -47,6 +59,9 @@ const ActivitiesPage = () => {
 
         if (activeCategory !== DEFAULT_CATEGORY) {
             acts = acts.filter((a) => a.category === activeCategory);
+        }
+        if (activeCity !== DEFAULT_CITY) {
+            acts = acts.filter((a) => a.city === activeCity);
         }
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
@@ -74,7 +89,7 @@ const ActivitiesPage = () => {
             });
             default: return acts.sort((a, b) => (b.reviews ?? b.rating?.count ?? 0) - (a.reviews ?? a.rating?.count ?? 0));
         }
-    }, [activeCategory, searchQuery, sortBy, activities]);
+    }, [activeCategory, activeCity, searchQuery, sortBy, activities]);
 
     return (
         <div className="min-h-screen bg-white">
@@ -128,6 +143,14 @@ const ActivitiesPage = () => {
                 activeCategory={activeCategory}
                 defaultCategory={DEFAULT_CATEGORY}
                 onCategoryChange={setActiveCategory}
+                selects={[{
+                    id: 'city',
+                    label: 'City',
+                    value: activeCity,
+                    defaultValue: DEFAULT_CITY,
+                    onChange: setActiveCity,
+                    options: CITY_OPTIONS,
+                }]}
                 sortOptions={SORT_OPTIONS}
                 sortBy={sortBy}
                 defaultSort={DEFAULT_SORT}
