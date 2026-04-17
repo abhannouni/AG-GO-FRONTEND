@@ -83,7 +83,7 @@ const Navbar = () => {
                 <div className="flex items-center justify-between px-6 py-3">
                     <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
                         <div className="w-9 h-9 bg-forest-900 rounded-full flex items-center justify-center shadow-md">
-                            <GlobeIcon />
+                            <img src="/logo.png" alt="Logo" className="rounded-full" />
                         </div>
                         <span className="font-extrabold text-forest-900 text-xl tracking-tight">
                             Afrika<span className="text-gold-500">Go</span>
