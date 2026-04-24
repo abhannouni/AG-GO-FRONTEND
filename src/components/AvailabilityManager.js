@@ -52,6 +52,13 @@ const toDateStr = (dateVal) => {
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 };
 
+const shiftDate = (dateStr, deltaDays) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() + deltaDays);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+};
+
 const toMinutes = (hhmm) => {
     const [h, m] = hhmm.split(':').map(Number);
     return h * 60 + m;
@@ -105,8 +112,8 @@ const SlotCard = ({ slot, endTime, enriched, onRemove }) => {
 
     return (
         <div className={`rounded-xl border px-4 py-3 flex flex-col gap-2 transition-colors ${isFull ? 'bg-red-50 border-red-200'
-                : isPartial ? 'bg-amber-50 border-amber-200'
-                    : 'bg-forest-50 border-forest-100'
+            : isPartial ? 'bg-amber-50 border-amber-200'
+                : 'bg-forest-50 border-forest-100'
             }`}>
             <div className="flex items-center gap-2 flex-wrap">
                 {/* Time range */}
@@ -126,8 +133,8 @@ const SlotCard = ({ slot, endTime, enriched, onRemove }) => {
                 {/* Occupancy badge */}
                 {hasOccupancy && (
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isFull ? 'bg-red-100 text-red-600'
-                            : isPartial ? 'bg-amber-100 text-amber-700'
-                                : 'bg-emerald-100 text-emerald-700'
+                        : isPartial ? 'bg-amber-100 text-amber-700'
+                            : 'bg-emerald-100 text-emerald-700'
                         }`}>
                         {isFull
                             ? 'Fully booked'
@@ -223,7 +230,7 @@ const SlotAdder = ({ time, setTime, spots, setSpots, onAdd, conflict, endTimePre
  * Slot blocks are positioned absolutely; height reflects the activity duration.
  * Color: emerald = open, amber = partially booked, red = fully booked.
  */
-const TimelineView = ({ slots, isBlocked, durationHours, selectedDate }) => {
+const TimelineView = ({ slots, isBlocked, durationHours, selectedDate, minDate, onDateChange }) => {
     const hours = Array.from({ length: TIMELINE_END - TIMELINE_START + 1 }, (_, i) => i + TIMELINE_START);
     const totalHeight = (TIMELINE_END - TIMELINE_START) * ROW_HEIGHT;
 
@@ -249,6 +256,7 @@ const TimelineView = ({ slots, isBlocked, durationHours, selectedDate }) => {
     const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-GB', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     });
+    const canGoPrev = selectedDate > minDate;
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -267,6 +275,32 @@ const TimelineView = ({ slots, isBlocked, durationHours, selectedDate }) => {
                     {!isBlocked && slots.length === 0 && (
                         <span className="text-xs text-gray-400 mt-0.5 block">No availability defined &mdash; go to Calendar tab to add slots</span>
                     )}
+                </div>
+
+                {/* Timeline date controls */}
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        disabled={!canGoPrev}
+                        onClick={() => canGoPrev && onDateChange(shiftDate(selectedDate, -1))}
+                        className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        Prev
+                    </button>
+                    <input
+                        type="date"
+                        min={minDate}
+                        value={selectedDate}
+                        onChange={(e) => onDateChange(e.target.value)}
+                        className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 bg-white"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => onDateChange(shiftDate(selectedDate, 1))}
+                        className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                    >
+                        Next
+                    </button>
                 </div>
 
                 {/* Legend */}
@@ -337,21 +371,21 @@ const TimelineView = ({ slots, isBlocked, durationHours, selectedDate }) => {
                                     <div
                                         key={slot.startTime}
                                         className={`absolute left-1 right-1 rounded-xl border px-3 flex flex-col justify-center overflow-hidden ${isFull ? 'bg-red-50 border-red-200'
-                                                : isPart ? 'bg-amber-50 border-amber-200'
-                                                    : 'bg-emerald-50 border-emerald-200'
+                                            : isPart ? 'bg-amber-50 border-amber-200'
+                                                : 'bg-emerald-50 border-emerald-200'
                                             }`}
                                         style={slotStyle}
                                     >
                                         <div className="flex items-center justify-between gap-2">
                                             <span className={`font-bold text-xs tabular-nums truncate ${isFull ? 'text-red-700'
-                                                    : isPart ? 'text-amber-700'
-                                                        : 'text-emerald-700'
+                                                : isPart ? 'text-amber-700'
+                                                    : 'text-emerald-700'
                                                 }`}>
                                                 {slot.startTime} &rarr; {endT}
                                             </span>
                                             <span className={`text-[11px] font-semibold flex-shrink-0 ${isFull ? 'text-red-500'
-                                                    : isPart ? 'text-amber-600'
-                                                        : 'text-emerald-600'
+                                                : isPart ? 'text-amber-600'
+                                                    : 'text-emerald-600'
                                                 }`}>
                                                 {isFull
                                                     ? 'Full'
@@ -602,6 +636,12 @@ const AvailabilityManager = ({ activities = [] }) => {
     const toggleBulkWeekday = (val) =>
         setBulkWeekdays((prev) => prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]);
 
+    useEffect(() => {
+        if (activeTab === 'timeline' && !selectedDate) {
+            setSelectedDate(todayStr());
+        }
+    }, [activeTab, selectedDate]);
+
     // ── Derived display values ────────────────────────────────────────────────
 
     const selectedRecord = selectedDate ? records.find((r) => toDateStr(r.date) === selectedDate) : null;
@@ -638,8 +678,8 @@ const AvailabilityManager = ({ activities = [] }) => {
                                         dispatch(clearSlots());
                                     }}
                                     className={`text-left px-4 py-3 rounded-xl border text-sm font-semibold transition-all ${sel
-                                            ? 'bg-forest-900 border-forest-900 text-white shadow-md'
-                                            : 'bg-white border-gray-200 text-gray-700 hover:border-forest-300 hover:bg-forest-50'
+                                        ? 'bg-forest-900 border-forest-900 text-white shadow-md'
+                                        : 'bg-white border-gray-200 text-gray-700 hover:border-forest-300 hover:bg-forest-50'
                                         }`}
                                 >
                                     <span className="line-clamp-1">{act.title}</span>
@@ -670,8 +710,8 @@ const AvailabilityManager = ({ activities = [] }) => {
                                     type="button"
                                     onClick={() => setActiveTab(id)}
                                     className={`px-5 py-3.5 text-sm font-semibold transition-colors whitespace-nowrap ${activeTab === id
-                                            ? 'text-forest-900 border-b-2 border-forest-900 bg-forest-50/40'
-                                            : 'text-gray-500 hover:text-gray-700'
+                                        ? 'text-forest-900 border-b-2 border-forest-900 bg-forest-50/40'
+                                        : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
                                     {label}
@@ -831,6 +871,8 @@ const AvailabilityManager = ({ activities = [] }) => {
                                 isBlocked={isSelectedBlocked}
                                 durationHours={selectedActivity?.duration ?? 1}
                                 selectedDate={selectedDate}
+                                minDate={todayStr()}
+                                onDateChange={setSelectedDate}
                             />
                         )}
 
@@ -868,8 +910,8 @@ const AvailabilityManager = ({ activities = [] }) => {
                                         {WEEKDAY_LIST.map(({ label, value }) => (
                                             <button key={value} type="button" onClick={() => toggleBulkWeekday(value)}
                                                 className={`w-10 h-10 rounded-xl text-xs font-bold border transition-all ${bulkWeekdays.includes(value)
-                                                        ? 'bg-forest-900 text-white border-forest-900'
-                                                        : 'bg-white text-gray-400 border-gray-200 hover:border-forest-300'
+                                                    ? 'bg-forest-900 text-white border-forest-900'
+                                                    : 'bg-white text-gray-400 border-gray-200 hover:border-forest-300'
                                                     }`}>
                                                 {label}
                                             </button>

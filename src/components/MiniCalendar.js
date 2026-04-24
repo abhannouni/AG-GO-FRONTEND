@@ -74,8 +74,21 @@ const MiniCalendar = ({
     showLegend = true,
     allowAllFuture = false,
 }) => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const effectiveMin = minDate || todayStr;
+    const formatLocalDate = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
+    const parseDateOnly = (dateStr) => {
+        const [y, m, d] = String(dateStr).split('-').map(Number);
+        return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
+    };
+
+    const todayDate = new Date();
+    const todayStr = formatLocalDate(todayDate);
+    const effectiveMinDate = parseDateOnly(minDate || todayStr);
 
     // Build calendar grid (Monday-first)
     const daysInMonth = new Date(year, month, 0).getDate();          // day 0 of next month = last day of this month
@@ -104,7 +117,7 @@ const MiniCalendar = ({
         `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
     const getStatus = (dateStr) => {
-        if (dateStr < effectiveMin) return 'past';
+        if (parseDateOnly(dateStr) < effectiveMinDate) return 'past';
         return dateStatusMap[dateStr] || 'none';
     };
 
@@ -113,6 +126,19 @@ const MiniCalendar = ({
         if (status === 'past') return false;
         if (allowAllFuture) return true;          // providers can click any future date
         return status === 'available';            // clients can only pick dates with open slots
+    };
+
+    const clickableCellClass = (status) => {
+        if (status === 'blocked') {
+            return 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100 cursor-pointer';
+        }
+        if (status === 'full') {
+            return 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 cursor-pointer';
+        }
+        if (status === 'none') {
+            return 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-forest-300 cursor-pointer';
+        }
+        return STATUS_CONFIG[status]?.cell || STATUS_CONFIG.none.cell;
     };
 
     return (
@@ -176,6 +202,9 @@ const MiniCalendar = ({
                             const clickable = isClickable(dateStr);
                             const isToday = dateStr === todayStr;
                             const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.none;
+                            const baseCellClass = clickable
+                                ? clickableCellClass(status)
+                                : `${cfg.cell} pointer-events-none`;
 
                             return (
                                 <button
@@ -183,13 +212,14 @@ const MiniCalendar = ({
                                     type="button"
                                     onClick={() => clickable && onDateSelect(dateStr)}
                                     disabled={!clickable}
+                                    aria-disabled={!clickable}
                                     title={cfg.label || ''}
                                     className={[
                                         'relative flex flex-col items-center justify-center rounded-lg border',
                                         'w-full aspect-square text-xs font-semibold transition-all',
                                         selected
                                             ? 'bg-forest-900 border-forest-900 text-white ring-2 ring-forest-400 ring-offset-1'
-                                            : cfg.cell,
+                                            : baseCellClass,
                                         isToday && !selected ? 'ring-2 ring-forest-300 ring-offset-1' : '',
                                     ].join(' ')}
                                 >

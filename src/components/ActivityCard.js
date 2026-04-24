@@ -55,6 +55,7 @@ const ActivityCard = ({ activity }) => {
     const imageUrl = (images && images[0]) || FALLBACK_IMAGE;
     const formattedDuration = formatDuration(duration);
     const activityId = activity._id || activity.id;
+    const activityCapacity = activity.capacity ?? activity.maxParticipants ?? null;
 
     return (
         <Link
@@ -98,6 +99,12 @@ const ActivityCard = ({ activity }) => {
                         <span>{formattedDuration}</span>
                     </div>
                 </div>
+
+                {activityCapacity && (
+                    <div className="mt-2 text-xs text-gray-500">
+                        Capacity: <span className="font-semibold text-gray-700">{activityCapacity}</span>
+                    </div>
+                )}
 
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-1">

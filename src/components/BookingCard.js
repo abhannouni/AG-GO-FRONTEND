@@ -74,6 +74,7 @@ const BookingCard = ({ booking, onCancel, cancelLoading }) => {
 
     const canCancel = status === 'pending' || status === 'confirmed';
     const isCancelling = cancelLoading === booking._id;
+    const hasCapacityData = Number.isFinite(booking.capacity);
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
@@ -151,6 +152,11 @@ const BookingCard = ({ booking, onCancel, cancelLoading }) => {
 
                     {/* Actions */}
                     <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-4">
+                        {hasCapacityData && (
+                            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-forest-50 text-forest-700 border border-forest-100">
+                                {booking.remainingSpots} left · {booking.bookedSpots} booked / {booking.capacity}
+                            </span>
+                        )}
                         {activityId && (
                             <Link
                                 to={`/activities/${activityId}`}

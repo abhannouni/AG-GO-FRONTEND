@@ -72,12 +72,14 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
         notes: '',
     });
     const [errors, setErrors] = useState({});
+    const [submitError, setSubmitError] = useState('');
 
     // Reset form whenever modal opens
     useEffect(() => {
         if (isOpen) {
             setForm({ date: '', startTime: '', participants: 1, notes: '' });
             setErrors({});
+            setSubmitError('');
             dispatch(clearSlots());
             dispatch(clearCalendar());
             // Show current month
@@ -194,6 +196,20 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
     const slots = availableSlots?.slots ?? [];
     const durationHours = availableSlots?.durationHours ?? activity.duration;
     const selectedSlot = slots.find((s) => s.startTime === form.startTime);
+    const selectedSlotCapacity = selectedSlot?.capacity ?? selectedSlot?.availableSpots;
+    const selectedSlotBooked = selectedSlot?.bookedSpots ?? (
+        selectedSlotCapacity != null && selectedSlot?.remainingSpots != null
+            ? Math.max(0, selectedSlotCapacity - selectedSlot.remainingSpots)
+            : null
+    );
+    const selectedSlotRemaining = selectedSlot?.remainingSpots ?? null;
+
+    const maxSelectableParticipants = selectedSlot
+        ? Math.max(1, Math.min(
+            selectedSlotRemaining ?? 1,
+            activity.maxParticipants || selectedSlotRemaining || 99
+        ))
+        : (activity.maxParticipants || 99);
 
     const numParticipants = Number(form.participants || 1);
     const totalPrice = (activity.price || 0) * numParticipants;
@@ -222,12 +238,13 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
         return e;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const errs = validate();
         if (Object.keys(errs).length) { setErrors(errs); return; }
         setErrors({});
-        dispatch(
+        setSubmitError('');
+        const result = await dispatch(
             createBooking({
                 activityId: activity._id || activity.id,
                 date: form.date,
@@ -236,6 +253,13 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
                 ...(form.notes.trim() && { notes: form.notes.trim() }),
             })
         );
+        if (createBooking.rejected.match(result)) {
+            const message = result.payload || 'Could not complete booking. Please try again.';
+            setSubmitError(message);
+            dispatch(showToast({ message, type: 'error' }));
+            // Refresh slots so the UI reflects the latest capacity after a failed attempt.
+            dispatch(fetchAvailableSlots({ activityId: activity._id || activity.id, date: form.date }));
+        }
     };
 
     const imageUrl = activity.images?.[0] || activity.image || FALLBACK_IMAGE;
@@ -353,7 +377,9 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
                                                     {slot.startTime} → {slot.endTime}
                                                 </span>
                                                 <span className={`text-xs ${isSelected ? 'text-white/70' : isDisabled ? 'text-gray-300' : 'text-gray-500'}`}>
-                                                    {isDisabled ? 'Fully booked' : `${slot.remainingSpots} spot${slot.remainingSpots !== 1 ? 's' : ''} left`}
+                                                    {isDisabled
+                                                        ? 'Fully booked'
+                                                        : `${slot.remainingSpots} left · ${slot.bookedSpots ?? Math.max(0, (slot.capacity ?? slot.availableSpots) - slot.remainingSpots)} booked / ${slot.capacity ?? slot.availableSpots} total`}
                                                 </span>
                                                 {isDisabled && (
                                                     <span className="absolute top-1.5 right-2 text-[10px] font-semibold text-gray-300">✕</span>
@@ -377,6 +403,23 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
                             </div>
                         )}
 
+                        {selectedSlot && (
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                                    <p className="text-[11px] text-gray-500">Capacity</p>
+                                    <p className="text-sm font-bold text-gray-800">{selectedSlotCapacity ?? '--'}</p>
+                                </div>
+                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                                    <p className="text-[11px] text-amber-600">Booked</p>
+                                    <p className="text-sm font-bold text-amber-700">{selectedSlotBooked ?? '--'}</p>
+                                </div>
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                                    <p className="text-[11px] text-emerald-600">Remaining</p>
+                                    <p className="text-sm font-bold text-emerald-700">{selectedSlotRemaining ?? '--'}</p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Participants */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -385,15 +428,19 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
                             <input
                                 type="number"
                                 min="1"
-                                max={selectedSlot ? selectedSlot.remainingSpots : (activity.maxParticipants || 99)}
+                                max={maxSelectableParticipants}
                                 value={form.participants}
-                                onChange={(e) => setForm((f) => ({ ...f, participants: e.target.value }))}
+                                onChange={(e) => {
+                                    const raw = Number(e.target.value || 1);
+                                    const next = Math.min(Math.max(raw, 1), maxSelectableParticipants);
+                                    setForm((f) => ({ ...f, participants: next }));
+                                }}
                                 className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 transition text-sm font-medium ${errors.participants ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-forest-300'}`}
                             />
                             {errors.participants && <p className="mt-1 text-xs text-red-500">{errors.participants}</p>}
                             {selectedSlot && (
                                 <p className="mt-1 text-xs text-gray-400">
-                                    {selectedSlot.remainingSpots} spot{selectedSlot.remainingSpots !== 1 ? 's' : ''} remaining in this slot
+                                    You can book up to {maxSelectableParticipants} participant{maxSelectableParticipants !== 1 ? 's' : ''} for this slot.
                                 </p>
                             )}
                         </div>
@@ -428,7 +475,7 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
                         {/* Submit */}
                         <button
                             type="submit"
-                            disabled={loading || slots.length === 0 || slotsLoading}
+                            disabled={loading || slots.length === 0 || slotsLoading || (selectedSlot && (selectedSlot.remainingSpots || 0) < 1)}
                             className="w-full py-3.5 rounded-xl bg-forest-900 text-white font-bold text-sm hover:bg-forest-800 active:bg-forest-950 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? (
@@ -443,6 +490,12 @@ const BookingModal = ({ activity, isOpen, onClose }) => {
                                 `Confirm Booking · $${totalPrice.toFixed(2)}`
                             )}
                         </button>
+
+                        {submitError && (
+                            <p className="text-center text-xs text-red-500 -mt-1">
+                                {submitError}
+                            </p>
+                        )}
 
                         <p className="text-center text-xs text-gray-400 pb-1">
                             Free cancellation up to 24 hours before the activity

@@ -257,6 +257,14 @@ const DashboardPage = () => {
                                                             {typeof act.duration === 'number' ? `${act.duration}h` : act.duration}
                                                         </span>
                                                     )}
+                                                    {(act.capacity || act.maxParticipants) && (
+                                                        <span className="flex items-center gap-1">
+                                                            <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857" />
+                                                            </svg>
+                                                            Cap {(act.capacity || act.maxParticipants)}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 {/* Footer row */}
