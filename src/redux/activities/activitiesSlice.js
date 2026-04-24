@@ -63,6 +63,19 @@ export const deleteActivity = createAsyncThunk(
     }
 );
 
+/** Fetch only the activities owned by a specific provider (uses ?providerId= filter) */
+export const fetchProviderActivities = createAsyncThunk(
+    'activities/fetchProvider',
+    async (providerId, { rejectWithValue }) => {
+        try {
+            const res = await activitiesAPI.list({ providerId });
+            return res.data.data ?? res.data;
+        } catch (err) {
+            return rejectWithValue(err.message);
+        }
+    }
+);
+
 // ── Slice ─────────────────────────────────────────────────────────────────────
 
 const activitiesSlice = createSlice({
@@ -75,6 +88,10 @@ const activitiesSlice = createSlice({
         error: null,
         // filters mirrored in Redux so components stay in sync
         filters: { city: '', category: '' },
+        // provider-scoped list (isolated from the public `items` list)
+        providerItems: [],
+        providerLoading: false,
+        providerError: null,
     },
     reducers: {
         setFilters(state, action) {
@@ -124,6 +141,7 @@ const activitiesSlice = createSlice({
             .addCase(createActivity.fulfilled, (state, action) => {
                 state.mutating = false;
                 state.items.unshift(action.payload);
+                state.providerItems.unshift(action.payload);
             })
             .addCase(createActivity.rejected, (state, action) => {
                 state.mutating = false;
@@ -138,6 +156,8 @@ const activitiesSlice = createSlice({
                 const idx = state.items.findIndex((a) => a._id === action.payload._id);
                 if (idx !== -1) state.items[idx] = action.payload;
                 if (state.selected?._id === action.payload._id) state.selected = action.payload;
+                const pidx = state.providerItems.findIndex((a) => a._id === action.payload._id);
+                if (pidx !== -1) state.providerItems[pidx] = action.payload;
             })
             .addCase(updateActivity.rejected, (state, action) => {
                 state.mutating = false;
@@ -150,10 +170,26 @@ const activitiesSlice = createSlice({
             .addCase(deleteActivity.fulfilled, (state, action) => {
                 state.mutating = false;
                 state.items = state.items.filter((a) => a._id !== action.payload);
+                state.providerItems = state.providerItems.filter((a) => a._id !== action.payload);
             })
             .addCase(deleteActivity.rejected, (state, action) => {
                 state.mutating = false;
                 state.error = action.payload;
+            });
+
+        // fetchProvider
+        builder
+            .addCase(fetchProviderActivities.pending, (state) => {
+                state.providerLoading = true;
+                state.providerError = null;
+            })
+            .addCase(fetchProviderActivities.fulfilled, (state, action) => {
+                state.providerLoading = false;
+                state.providerItems = Array.isArray(action.payload) ? action.payload : [];
+            })
+            .addCase(fetchProviderActivities.rejected, (state, action) => {
+                state.providerLoading = false;
+                state.providerError = action.payload;
             });
     },
 });
@@ -167,5 +203,9 @@ export const selectActivitiesLoading = (s) => s.activities.loading;
 export const selectActivitiesMutating = (s) => s.activities.mutating;
 export const selectActivitiesError = (s) => s.activities.error;
 export const selectActivityFilters = (s) => s.activities.filters;
+
+export const selectProviderActivities = (s) => s.activities.providerItems;
+export const selectProviderActivitiesLoading = (s) => s.activities.providerLoading;
+export const selectProviderActivitiesError = (s) => s.activities.providerError;
 
 export default activitiesSlice.reducer;

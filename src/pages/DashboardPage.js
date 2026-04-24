@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
-    fetchActivities, createActivity, updateActivity, deleteActivity,
-    selectActivities, selectActivitiesLoading, selectActivitiesError,
+    fetchProviderActivities, createActivity, updateActivity, deleteActivity,
+    selectProviderActivities, selectProviderActivitiesLoading, selectProviderActivitiesError,
 } from '../redux/activities/activitiesSlice';
 import {
     fetchMyBookings, fetchProviderBookings, updateBookingStatus,
@@ -14,6 +14,7 @@ import { showToast } from '../redux/ui/uiSlice';
 import Spinner from '../components/Spinner';
 import ActivityForm from '../components/ActivityForm';
 import ConfirmModal from '../components/ConfirmModal';
+import AvailabilityManager from '../components/AvailabilityManager';
 
 const STATUS_BADGE = {
     pending: 'bg-yellow-100 text-yellow-800',
@@ -37,17 +38,16 @@ const DashboardPage = () => {
     const user = useSelector(selectUser);
     const role = useSelector(selectUserRole);
 
-    const activities = useSelector(selectActivities);
-    const activitiesLoading = useSelector(selectActivitiesLoading);
-    const activitiesError = useSelector(selectActivitiesError);
+    const activities = useSelector(selectProviderActivities);
+    const activitiesLoading = useSelector(selectProviderActivitiesLoading);
+    const activitiesError = useSelector(selectProviderActivitiesError);
 
     const myBookings = useSelector(selectMyBookings);
     const providerBookings = useSelector(selectProviderBookings);
     const bookingsLoading = useSelector(selectBookingsLoading);
     const bookingsError = useSelector(selectBookingsError);
 
-    const [tab, setTab] = useState(role === 'client' ? 'bookings' : 'activities');
-    const [showForm, setShowForm] = useState(false);
+    const [tab, setTab] = useState(role === 'client' ? 'bookings' : 'activities'); const [showForm, setShowForm] = useState(false);
     const [editingActivity, setEditingActivity] = useState(null);
     const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null, title: '' });
     const [deletingId, setDeletingId] = useState(null);
@@ -61,7 +61,7 @@ const DashboardPage = () => {
         if (role === 'client') {
             dispatch(fetchMyBookings());
         } else {
-            dispatch(fetchActivities());
+            dispatch(fetchProviderActivities(user?._id || user?.id));
             dispatch(fetchProviderBookings());
         }
     }, [dispatch, isAuthenticated, role, navigate]);
@@ -113,7 +113,7 @@ const DashboardPage = () => {
 
     const handleStatusUpdate = async (bookingId, status) => {
         try {
-            await dispatch(updateBookingStatus({ id: bookingId, status })).unwrap();
+            await dispatch(updateBookingStatus({ id: bookingId, data: { status } })).unwrap();
             dispatch(showToast({ message: `Booking ${status}`, type: 'success' }));
             dispatch(fetchProviderBookings());
         } catch (err) {
@@ -145,6 +145,14 @@ const DashboardPage = () => {
                             className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'activities' ? 'bg-forest-900 text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             My Activities
+                        </button>
+                    )}
+                    {isProvider && (
+                        <button
+                            onClick={() => setTab('availability')}
+                            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'availability' ? 'bg-forest-900 text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Availability
                         </button>
                     )}
                     <button
@@ -286,6 +294,19 @@ const DashboardPage = () => {
                     </div>
                 )}
 
+                {/* ── Availability Tab (provider/admin) ── */}
+                {tab === 'availability' && isProvider && (
+                    <div>
+                        <div className="flex items-center justify-between mb-5">
+                            <div>
+                                <h2 className="text-xl font-bold text-forest-950">Manage Availability</h2>
+                                <p className="text-sm text-gray-500 mt-0.5">Define the dates and time slots when clients can book your activities.</p>
+                            </div>
+                        </div>
+                        <AvailabilityManager activities={activities} />
+                    </div>
+                )}
+
                 {/* ── Bookings Tab ── */}
                 {tab === 'bookings' && (
                     <div>
@@ -313,10 +334,14 @@ const DashboardPage = () => {
                                             </p>
                                             <p className="text-sm text-gray-500 mt-0.5">
                                                 {booking.date ? new Date(booking.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                                                {booking.startTime && ` · ${booking.startTime}${booking.endTime ? `–${booking.endTime}` : ''}`}
                                                 {booking.participants && ` · ${booking.participants} person${booking.participants !== 1 ? 's' : ''}`}
                                             </p>
+                                            {booking.totalPrice != null && (
+                                                <p className="text-xs text-forest-700 font-semibold mt-0.5">${booking.totalPrice.toFixed(2)}</p>
+                                            )}
                                             {isProvider && booking.user && (
-                                                <p className="text-xs text-gray-400 mt-0.5">{booking.user.name || booking.user.email}</p>
+                                                <p className="text-xs text-gray-400 mt-0.5">{booking.user.username || booking.user.email}</p>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-3 flex-shrink-0">

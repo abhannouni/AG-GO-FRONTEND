@@ -4,6 +4,7 @@ import activitiesReducer from './activities/activitiesSlice';
 import bookingsReducer from './bookings/bookingsSlice';
 import uiReducer from './ui/uiSlice';
 import tripsReducer from './trips/tripsSlice';
+import availabilityReducer from './availability/availabilitySlice';
 
 const store = configureStore({
     reducer: {
@@ -12,6 +13,7 @@ const store = configureStore({
         bookings: bookingsReducer,
         ui: uiReducer,
         trips: tripsReducer,
+        availability: availabilityReducer,
     },
 });
 

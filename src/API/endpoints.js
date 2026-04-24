@@ -14,8 +14,20 @@ export const activitiesAPI = {
 };
 
 export const availabilityAPI = {
+    /** List raw availability records (provider-side management) */
     list: (params) => apiClient.get('/availability', { params }),
+    /** Get annotated slots with remainingSpots for a specific activity + date */
+    getSlots: (params) => apiClient.get('/availability/slots', { params }),
+    /** Get per-day status for a full month (client calendar view) */
+    getCalendar: (params) => apiClient.get('/availability/calendar', { params }),
+    /** Provider: create / upsert availability for a date */
     create: (data) => apiClient.post('/availability', data),
+    /** Provider: bulk create/block availability for a date range */
+    createBulk: (data) => apiClient.post('/availability/bulk', data),
+    /** Provider: replace time slots for an existing availability record */
+    update: (id, data) => apiClient.patch(`/availability/${id}`, data),
+    /** Provider: delete an availability record */
+    remove: (id) => apiClient.delete(`/availability/${id}`),
 };
 
 export const bookingsAPI = {

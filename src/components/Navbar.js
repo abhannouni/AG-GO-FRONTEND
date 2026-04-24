@@ -118,6 +118,17 @@ const Navbar = () => {
                                 <div className="hidden md:flex items-center gap-2">
                                     {userRole === 'prestataire' || userRole === 'admin' ? (
                                         <Link
+                                            to="/my-activities"
+                                            className={`text-sm font-semibold transition-colors px-3 py-2 rounded-full ${isActive('/my-activities')
+                                                    ? 'bg-forest-50 text-forest-900 font-bold'
+                                                    : 'text-gray-600 hover:text-forest-800 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            My Activities
+                                        </Link>
+                                    ) : null}
+                                    {userRole === 'prestataire' || userRole === 'admin' ? (
+                                        <Link
                                             to="/dashboard"
                                             className="bg-gold-500 text-forest-950 px-4 py-2 rounded-full text-sm font-semibold hover:bg-gold-400 transition-colors shadow-md shadow-gold-500/20"
                                         >
@@ -199,8 +210,15 @@ const Navbar = () => {
                             {isAuthenticated ? (
                                 <>
                                     {(userRole === 'prestataire' || userRole === 'admin') && (
-                                        <Link
-                                            to="/dashboard"
+                                        <Link to="/my-activities"
+                                            onClick={() => setMobileOpen(false)}
+                                            className="flex-1 py-2 rounded-full text-sm font-semibold text-center bg-forest-50 text-forest-900 border border-forest-200"
+                                        >
+                                            My Activities
+                                        </Link>
+                                    )}
+                                    {(userRole === 'prestataire' || userRole === 'admin') && (
+                                        <Link to="/dashboard"
                                             onClick={() => setMobileOpen(false)}
                                             className="flex-1 py-2 rounded-full text-sm font-semibold text-center bg-gold-500 text-forest-950"
                                         >

@@ -14,6 +14,7 @@ import DashboardPage from './pages/DashboardPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import MyBookingsPage from './pages/MyBookingsPage';
+import ProviderActivitiesPage from './pages/ProviderActivitiesPage';
 import ToastNotification from './components/ToastNotification';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -37,6 +38,14 @@ function App() {
               element={
                 <ProtectedRoute roles={['client']}>
                   <MyBookingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-activities"
+              element={
+                <ProtectedRoute roles={['prestataire', 'admin']}>
+                  <ProviderActivitiesPage />
                 </ProtectedRoute>
               }
             />

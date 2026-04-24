@@ -133,7 +133,7 @@ const BookingCard = ({ booking, onCancel, cancelLoading }) => {
                                 <line x1="8" y1="2" x2="8" y2="6" />
                                 <line x1="16" y1="2" x2="16" y2="6" />
                             </svg>
-                            {bookingDate}{booking.time ? ` · ${booking.time}` : ''}
+                            {bookingDate}{booking.startTime ? ` · ${booking.startTime}${booking.endTime ? `–${booking.endTime}` : ''}` : (booking.time ? ` · ${booking.time}` : '')}
                         </span>
                         <span className="flex items-center gap-1.5">
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
